@@ -1,0 +1,61 @@
+# This pipeline has two tasks. The first task outputs a file with the date
+# The second task reads and prints the contents of the file
+
+jobs:
+  - name: a-job
+    plan:
+      - task: create-one-output
+        # The task config has the output `the-output`
+        # this will rename `the-output` to `demo-disk` in the rest of the job's plan
+        output_mapping:
+          the-output: demo-disk
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: {repository: busybox}
+          outputs:
+            - name: the-output
+          run:
+            path: /bin/sh
+            args:
+              - -cx
+              - |
+                ls -lah
+                date > ./the-output/file
+      - in_parallel:
+        - task: read-ouput-from-previous-step
+          config:
+            platform: linux
+            image_resource:
+              type: registry-image
+              source: {repository: busybox}
+            inputs:
+              - name: demo-disk
+            run:
+              path: /bin/sh
+              args:
+                - -cx
+                - |
+                  ls -lah
+                  cat ./demo-disk/file
+        - task: rename-and-read-output
+          # This task config expects the input `generic-input`
+          # This mapping will rename the incoming `demo-disk` output from the
+          # first task step to `generic-input`
+          input_mapping:
+            generic-input: demo-disk
+          config:
+            platform: linux
+            image_resource:
+              type: registry-image
+              source: {repository: busybox}
+            inputs:
+              - name: generic-input
+            run:
+              path: /bin/sh
+              args:
+                - -cx
+                - |
+                  ls -lah
+                  cat ./generic-input/file
