@@ -1,0 +1,102 @@
+# The first two tasks, running in parallel, will write to the same directory
+# but under different file names. What happens?
+# The final task will try reading from both files
+
+jobs:
+  - name: add-file-to-output
+    plan:
+      - task: create-one-output
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: {repository: busybox}
+          outputs:
+            - name: the-output
+          run:
+            path: /bin/sh
+            args:
+              - -cx
+              - |
+                ls -lah
+                date > ./the-output/file1
+      - task: create-another-output
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: {repository: busybox}
+          inputs:
+            - name: the-output
+          outputs:
+            - name: the-output
+          run:
+            path: /bin/sh
+            args:
+              - -cx
+              - |
+                ls -lah
+                date > ./the-output/file2
+      - task: read-ouput-from-previous-step
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: {repository: busybox}
+          inputs:
+            - name: the-output
+          run:
+            path: /bin/sh
+            args:
+              - -cx
+              - |
+                ls -lah ./the-output
+                cat ./the-output/file1 ./the-output/file2
+
+  - name: add-file-to-output-and-redeclare-output
+    plan:
+      - task: create-one-output
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: {repository: busybox}
+          outputs:
+            - name: the-output
+          run:
+            path: /bin/sh
+            args:
+              - -cx
+              - |
+                ls -lah
+                date > ./the-output/file1
+      - task: create-another-output
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: {repository: busybox}
+          outputs:
+            - name: the-output
+          run:
+            path: /bin/sh
+            args:
+              - -cx
+              - |
+                ls -lah
+                date > ./the-output/file2
+      - task: read-ouput-from-previous-step
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: {repository: busybox}
+          inputs:
+            - name: the-output
+          run:
+            path: /bin/sh
+            args:
+              - -cx
+              - |
+                ls -lah ./the-output
+                cat ./the-output/file1 ./the-output/file2

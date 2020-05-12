@@ -24,6 +24,7 @@ jobs:
                 ls -lah
                 date > ./the-output/file
       - in_parallel:
+        # this task expects the output `demo-disk` so no mapping is needed
         - task: read-ouput-from-previous-step
           config:
             platform: linux
@@ -40,9 +41,8 @@ jobs:
                   ls -lah
                   cat ./demo-disk/file
         - task: rename-and-read-output
-          # This task config expects the input `generic-input`
-          # This mapping will rename the incoming `demo-disk` output from the
-          # first task step to `generic-input`
+          # This task expects the input `generic-input`
+          # input_mapping will map the tasks `generic-input` to the job plans `demo-disk`
           input_mapping:
             generic-input: demo-disk
           config:
