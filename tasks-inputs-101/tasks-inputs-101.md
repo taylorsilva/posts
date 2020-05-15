@@ -6,11 +6,11 @@ Let's define some jargon first.
 
 * **step**: A step is a container running code within the context of a Concourse job. A step may have inputs and/or outputs, or neither.
 * **Job plan**: A list of steps that a job will execute when triggered.
-* **Inputs and Outputs**: These are directories. Within Concourse they're generically referred to as **volumes**. These directories are mounted in a **steps** container under _some name_. You, as a writer of Concourse pipelines, have control over what the name of your volumes will be.
+* **Inputs and Outputs**: These are directories. Within Concourse they're generically referred to as **volumes**. These volumes are mounted in a **step**'s container under a directory with _some name_. You, as a writer of Concourse pipelines, have control over what the name of your volumes will be.
 
-Let's do some things with inputs and outputs to see how they work in the real world.
+To run the pipelines in the following examples yourself you can get your own Concourse running locally by following the [Quick Start guide](https://concourse-ci.org/quick-start.html). Then use [`fly set-pipeline`](https://concourse-ci.org/setting-pipelines.html) to see the pipeline in action.
 
-To run these pipelines yourself get your own Concourse running locally by following the [Quick Start guide](https://concourse-ci.org/quick-start.html). Then use [`fly set-pipeline`](https://concourse-ci.org/setting-pipelines.html) to see the pipeline in action.
+Concourse pipelines contain a lot of information. Within each pipline YAML there are comments to help bring specific lines to your attention.
 
 ## Example One - Two Tasks
 
@@ -64,11 +64,11 @@ jobs:
 
 ## Example Two - Two tasks with the same output, who wins?
 
-This example is to statisfy the curiousity in us all. Never do this in real life because you're definitely going to hurt yourself!
+This example is to statisfy the curiousity cat inside all of us! Never do this in real life because you're definitely going to hurt yourself!
 
-There are two jobs in the pipeline. The first job has two steps that will produce `the-output` in parallel. If you run the `writing-to-the-same-output-in-parallel` job multiple times you'll see the file in the output folder changes depending on which of the parallel tasks finish first.
+There are two jobs in this pipeline. The first job has two steps that will produce `the-output` volume in parallel. If you run the `writing-to-the-same-output-in-parallel` job multiple times you'll see the file in the output folder changes depending on which of the parallel tasks finish first.
 
-For the serial version of the first job the second task always wins so only `file2` will be in `the-output` folder.
+The second job is a serial version of the first job. In this job the second task always wins because it's the last task that outputs `'the-output`, so only `file2` will be in `the-output` directory in the last step in the job plan.
 
 This pipeline illustrates that you could accidentally overwrite the output from a previous step if you're not careful with the names of your outputs.
 
@@ -77,6 +77,8 @@ This pipeline illustrates that you could accidentally overwrite the output from 
 jobs:
   - name: writing-to-the-same-output-in-parallel
     plan:
+      # running two tasks that output in parallel?!?
+      # who will win??
       - in_parallel:
         - task: create-the-output
           config:
@@ -108,6 +110,8 @@ jobs:
                 - |
                   ls -lah
                   date > ./the-output/file2
+      # run this job multiple times to see which
+      # previous task wins each time
       - task: read-ouput-from-previous-step
         config:
           platform: linux
@@ -177,11 +181,11 @@ jobs:
 
 ## Example Three - Input/Output Name Mapping
 
-Sometimes the names of inputs and outputs don't match, or they do match and you don't want them overwriting each other, like in the previous example. That's when `input_mapping` and `out_mapping` become helpful. Both of these features map the inputs/outputs in the task's config to some volume name in the job plan.
+Sometimes the names of inputs and outputs don't match, or they do match and you don't want them overwriting each other, like in the previous example. That's when `input_mapping` and `output_mapping` become helpful. Both of these features map the inputs/outputs in the task's config to some volume name in the job plan.
 
-This pipeline has four tasks. 
+This pipeline has one job with four tasks.
 
-The first task outputs a file with the date to the `the-ouput` directory. `the-output` is mapped to the new name `demo-disk`.  The volume `demo-disk` is now available in the rest of the job plan for future steps to consume.
+The first task outputs a file with the date to the `the-ouput` directory. `the-output` is mapped to the new name `demo-disk`.  The volume `demo-disk` is now available in the rest of the job plan for future steps to take as inputs.
 
 The second task reads and prints the contents of the file under the new name `demo-disk`.
 
@@ -196,8 +200,8 @@ jobs:
     plan:
       - task: create-one-output
         # The task config has the output `the-output`
-        # this will rename `the-output` to `demo-disk` in the
-        # rest of the job's plan
+        # the mapping will rename `the-output` to `demo-disk`
+        # in the rest of the job's plan
         output_mapping:
           the-output: demo-disk
         config:
@@ -214,61 +218,63 @@ jobs:
               - |
                 ls -lah
                 date > ./the-output/file
-      - in_parallel:
-        # this task expects the output `demo-disk` so no mapping is needed
-        - task: read-ouput-from-previous-step
-          config:
-            platform: linux
-            image_resource:
-              type: registry-image
-              source: {repository: busybox}
-            inputs:
-              - name: demo-disk
-            run:
-              path: /bin/sh
-              args:
-                - -cx
-                - |
-                  ls -lah
-                  cat ./demo-disk/file
-        - task: rename-and-read-output
-          # This task expects the input `generic-input`.
-          # input_mapping will map the tasks `generic-input` to
-          # the job plans `demo-disk`
-          input_mapping:
-            generic-input: demo-disk
-          config:
-            platform: linux
-            image_resource:
-              type: registry-image
-              source: {repository: busybox}
-            inputs:
-              - name: generic-input
-            run:
-              path: /bin/sh
-              args:
-                - -cx
-                - |
-                  ls -lah
-                  cat ./generic-input/file
-        - task: try-and-read-the-output
-          input_mapping:
-            generic-input: demo-disk
-          config:
-            platform: linux
-            image_resource:
-              type: registry-image
-              source: {repository: busybox}
-            # the-output is not available in the job plan
-            inputs:
-              - name: the-output
-            run:
-              path: /bin/sh
-              args:
-                - -cx
-                - |
-                  ls -lah
-                  cat ./generic-input/file
+      # this task expects the output `demo-disk` so no mapping is needed
+      - task: read-ouput-from-previous-step
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: {repository: busybox}
+          inputs:
+            - name: demo-disk
+          run:
+            path: /bin/sh
+            args:
+              - -cx
+              - |
+                ls -lah
+                cat ./demo-disk/file
+      - task: rename-and-read-output
+        # This task expects the input `generic-input`.
+        # input_mapping will map the tasks `generic-input` to
+        # the job plans `demo-disk`
+        input_mapping:
+          generic-input: demo-disk
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: {repository: busybox}
+          inputs:
+            - name: generic-input
+          run:
+            path: /bin/sh
+            args:
+              - -cx
+              - |
+                ls -lah
+                cat ./generic-input/file
+      - task: try-and-read-the-output
+        input_mapping:
+          generic-input: demo-disk
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: {repository: busybox}
+          # the-output is not available in the job plan
+          # so this task will error while initializing
+          # since there's no volume named the-output in
+          # the job's plan
+          inputs:
+            - name: the-output
+          run:
+            path: /bin/sh
+            args:
+              - -cx
+              - |
+                ls -lah
+                cat ./generic-input/file
 ```
 
 ## Example Four - Can you add files to an existing output volume?
@@ -307,6 +313,8 @@ jobs:
           image_resource:
             type: registry-image
             source: {repository: busybox}
+          # this task lists the same volume as
+          # its input and output
           inputs:
             - name: the-output
           outputs:
@@ -434,3 +442,5 @@ jobs:
                 ls -lah ./
                 cat ./concourse-examples/README.md
 ```
+
+I hope you found these example helpful with figuring out how inputs and outputs work within a single Concourse job.
