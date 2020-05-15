@@ -10,7 +10,7 @@ Let's define some jargon first.
 
 To run the pipelines in the following examples yourself you can get your own Concourse running locally by following the [Quick Start guide](https://concourse-ci.org/quick-start.html). Then use [`fly set-pipeline`](https://concourse-ci.org/setting-pipelines.html) to see the pipeline in action.
 
-Concourse pipelines contain a lot of information. Within each pipline YAML there are comments to help bring specific lines to your attention.
+Concourse pipelines contain a lot of information. Within each pipeline YAML there are comments to help bring specific lines to your attention.
 
 ## Example One - Two Tasks
 
@@ -66,7 +66,7 @@ jobs:
 
 This example is to statisfy the curiousity cat inside all of us! Never do this in real life because you're definitely going to hurt yourself!
 
-There are two jobs in this pipeline. The first job has two [step](https://concourse-ci.org/jobs.html#steps)s that will produce an artifact named `the-output` in parallel. If you run the `writing-to-the-same-output-in-parallel` job multiple times you'll see the file in `the-output` folder changes depending on which of the parallel tasks finished first.
+There are two jobs in this pipeline. The first job has two [step](https://concourse-ci.org/jobs.html#steps)s that will produce an artifact named `the-output` in parallel. If you run the `writing-to-the-same-output-in-parallel` job multiple times you'll see the file in `the-output` folder changes depending on which of the parallel tasks finished last.
 
 The second job is a serial version of the first job. In this job the second task always wins because it's the last task that outputs `'the-output`, so only `file2` will be in `the-output` directory in the last [step](https://concourse-ci.org/jobs.html#steps) in the [job plan](https://concourse-ci.org/jobs.html#schema.job.plan).
 
@@ -185,7 +185,7 @@ Sometimes the names of inputs and outputs don't match, or they do match and you 
 
 This pipeline has one job with four tasks.
 
-The first task outputs a file with the date to the `the-ouput` directory. `the-output` is mapped to the new name `demo-disk`.  The artifact `demo-disk` is now available in the rest of the [job plan](https://concourse-ci.org/jobs.html#schema.job.plan) for future [step](https://concourse-ci.org/jobs.html#steps)s to take as inputs.
+The first task outputs a file with the date to the `the-ouput` directory. `the-output` is mapped to the new name `demo-disk`.  The artifact `demo-disk` is now available in the rest of the [job plan](https://concourse-ci.org/jobs.html#schema.job.plan) for future [step](https://concourse-ci.org/jobs.html#steps)s to take as inputs. The remaining steps do this in various ways.
 
 The second task reads and prints the contents of the file under the new name `demo-disk`.
 
@@ -199,8 +199,8 @@ jobs:
   - name: a-job
     plan:
       - task: create-one-output
-        # The task config has the output `the-output`
-        # the mapping will rename `the-output` to `demo-disk`
+        # The task config has the artifact `the-output`
+        # output_mapping will rename `the-output` to `demo-disk`
         # in the rest of the job's plan
         output_mapping:
           the-output: demo-disk
@@ -218,7 +218,7 @@ jobs:
               - |
                 ls -lah
                 date > ./the-output/file
-      # this task expects the output `demo-disk` so no mapping is needed
+      # this task expects the artifact `demo-disk` so no mapping is needed
       - task: read-ouput-from-previous-step
         config:
           platform: linux
@@ -235,9 +235,9 @@ jobs:
                 ls -lah
                 cat ./demo-disk/file
       - task: rename-and-read-output
-        # This task expects the input `generic-input`.
+        # This task expects the artifact `generic-input`.
         # input_mapping will map the tasks `generic-input` to
-        # the job plans `demo-disk`
+        # the job plans `demo-disk` artifact
         input_mapping:
           generic-input: demo-disk
         config:
@@ -262,9 +262,9 @@ jobs:
           image_resource:
             type: registry-image
             source: {repository: busybox}
-          # the-output is not available in the job plan
+          # `the-output` is not available in the job plan
           # so this task will error while initializing
-          # since there's no artiact named the-output in
+          # since there's no artiact named `the-output` in
           # the job's plan
           inputs:
             - name: the-output
