@@ -6,7 +6,7 @@ Let's define some jargon first.
 
 * **step**: A step is a container running code within the context of a Concourse job. A step may have inputs and/or outputs, or neither.
 * **Job plan**: A list of steps that a job will execute when triggered.
-* **Inputs and Outputs**: These are directories. Within Concourse they're generically referred to as **volumes**. These volumes are mounted in a **step**'s container under a directory with _some name_. You, as a writer of Concourse pipelines, have control over what the name of your volumes will be.
+* **Inputs and Outputs**: These are directories. Within Concourse they're generically referred to as **artifacts**. These artifacts are mounted in a **step**'s container under a directory with _some name_. You, as a writer of Concourse pipelines, have control over what the name of your artifacts will be. If you're coming from the Docker world, artifact is synonymous with [volumes](https://docs.docker.com/storage/volumes/).
 
 To run the pipelines in the following examples yourself you can get your own Concourse running locally by following the [Quick Start guide](https://concourse-ci.org/quick-start.html). Then use [`fly set-pipeline`](https://concourse-ci.org/setting-pipelines.html) to see the pipeline in action.
 
@@ -66,7 +66,7 @@ jobs:
 
 This example is to statisfy the curiousity cat inside all of us! Never do this in real life because you're definitely going to hurt yourself!
 
-There are two jobs in this pipeline. The first job has two steps that will produce `the-output` volume in parallel. If you run the `writing-to-the-same-output-in-parallel` job multiple times you'll see the file in the output folder changes depending on which of the parallel tasks finish first.
+There are two jobs in this pipeline. The first job has two steps that will produce an artifact named `the-output` in parallel. If you run the `writing-to-the-same-output-in-parallel` job multiple times you'll see the file in `the-output` folder changes depending on which of the parallel tasks finished first.
 
 The second job is a serial version of the first job. In this job the second task always wins because it's the last task that outputs `'the-output`, so only `file2` will be in `the-output` directory in the last step in the job plan.
 
@@ -181,17 +181,17 @@ jobs:
 
 ## Example Three - Input/Output Name Mapping
 
-Sometimes the names of inputs and outputs don't match, or they do match and you don't want them overwriting each other, like in the previous example. That's when `input_mapping` and `output_mapping` become helpful. Both of these features map the inputs/outputs in the task's config to some volume name in the job plan.
+Sometimes the names of inputs and outputs don't match, or they do match and you don't want them overwriting each other, like in the previous example. That's when `input_mapping` and `output_mapping` become helpful. Both of these features map the inputs/outputs in the task's config to some artifact name in the job plan.
 
 This pipeline has one job with four tasks.
 
-The first task outputs a file with the date to the `the-ouput` directory. `the-output` is mapped to the new name `demo-disk`.  The volume `demo-disk` is now available in the rest of the job plan for future steps to take as inputs.
+The first task outputs a file with the date to the `the-ouput` directory. `the-output` is mapped to the new name `demo-disk`.  The artifact `demo-disk` is now available in the rest of the job plan for future steps to take as inputs.
 
 The second task reads and prints the contents of the file under the new name `demo-disk`.
 
-The third task reads and prints the contents of the file under another name, `generic-input`. The `demo-disk` volume in the job plan is mapped to `generic-input`.
+The third task reads and prints the contents of the file under another name, `generic-input`. The `demo-disk` artifact in the job plan is mapped to `generic-input`.
 
-The fourth task tries to use the volume name `the-output` as its input. This task fails to even start because `the-output` was never a volume name available in the job plan; it was remapped to `demo-disk`.
+The fourth task tries to use the artifact named `the-output` as its input. This task fails to even start because there was no artifact with the name `the-output` available in the job plan; it was remapped to `demo-disk`.
 
 ```yaml
 ---
@@ -264,7 +264,7 @@ jobs:
             source: {repository: busybox}
           # the-output is not available in the job plan
           # so this task will error while initializing
-          # since there's no volume named the-output in
+          # since there's no artiact named the-output in
           # the job's plan
           inputs:
             - name: the-output
@@ -277,7 +277,7 @@ jobs:
                 cat ./generic-input/file
 ```
 
-## Example Four - Can you add files to an existing output volume?
+## Example Four - Can you add files to an existing output artifact?
 
 This pipeline will also have two jobs in order to illustrate this point. What happens if we add a file to an output? If you think back to example two you may already know the answer.
 
@@ -285,7 +285,7 @@ The first task will create `the-output` with `file1`. The second task will add `
 
 As long as you redeclare the input as an output in the second task you can modify any of your outputs.
 
-This means you can pass something between a bunch of tasks and have each task add or modify something in the volume.
+This means you can pass something between a bunch of tasks and have each task add or modify something in the artifact.
 
 ```yaml
 ---
@@ -313,7 +313,7 @@ jobs:
           image_resource:
             type: registry-image
             source: {repository: busybox}
-          # this task lists the same volume as
+          # this task lists the same artifact as
           # its input and output
           inputs:
             - name: the-output
@@ -347,7 +347,7 @@ jobs:
 
 What happens if you have a task that has multple outputs and a second task that only lists one of the outputs? Does the second task get the extra outputs from the first task?
 
-The answer is no. A task will only get the volumes that match the name of the inputs listed in the task's config.
+The answer is no. A task will only get the artifacts that match the name of the inputs listed in the task's config.
 
 ```yaml
 ---
@@ -411,7 +411,7 @@ jobs:
 
 ## Example Six - Get Steps
 
-The majority of Concourse pipelines have at least one resource, which means they have at least one [get step](https://concourse-ci.org/jobs.html#get-step). Using a get step in a job makes a volume with the name of the get step available for later steps in the job plan to consume as inputs.
+The majority of Concourse pipelines have at least one resource, which means they have at least one [get step](https://concourse-ci.org/jobs.html#get-step). Using a get step in a job makes a artifact with the name of the get step available for later steps in the job plan to consume as inputs.
 
 ```yaml
 ---
@@ -423,8 +423,8 @@ resources:
 jobs:
   - name: get-step
     plan:
-      # there will be a volume named "concourse-examples"
-      # available in the job plan
+      # there will be an artifact named
+      # "concourse-examples" available in the job plan
       - get: concourse-examples
       - task: take-one-ouput
         config:
