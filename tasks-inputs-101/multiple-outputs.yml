@@ -1,51 +1,57 @@
 ---
 jobs:
-  - name: add-file-to-output
+  - name: multiple-outputs
     plan:
-      - task: create-one-output
+      - task: create-three-outputs
         config:
           platform: linux
           image_resource:
             type: registry-image
             source: {repository: busybox}
           outputs:
-            - name: the-output
+            - name: the-output-1
+            - name: the-output-2
+            - name: the-output-3
           run:
             path: /bin/sh
             args:
               - -cx
               - |
                 ls -lah
-                date > ./the-output/file1
-      - task: add-file-to-previous-output
+                date > ./the-output-1/file
+                date > ./the-output-2/file
+                date > ./the-output-3/file
+      - task: take-one-ouput
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: {repository: busybox}
+          # only one of the three outputs are
+          # listed as inputs
+          inputs:
+            - name: the-output-1
+          run:
+            path: /bin/sh
+            args:
+              - -cx
+              - |
+                ls -lah ./
+                cat ./the-output-1/file
+      - task: take-two-ouputs
         config:
           platform: linux
           image_resource:
             type: registry-image
             source: {repository: busybox}
           inputs:
-            - name: the-output
-          outputs:
-            - name: the-output
+            - name: the-output-2
+            - name: the-output-3
           run:
             path: /bin/sh
             args:
               - -cx
               - |
-                ls -lah
-                date > ./the-output/file2
-      - task: read-ouput-from-previous-step
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          inputs:
-            - name: the-output
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah ./the-output
-                cat ./the-output/file1 ./the-output/file2
+                ls -lah ./
+                cat ./the-output-2/file
+                cat ./the-output-3/file

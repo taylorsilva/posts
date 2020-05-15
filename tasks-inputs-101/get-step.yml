@@ -1,0 +1,27 @@
+---
+resources:
+- name: concourse-examples
+  type: git
+  source: {uri: "https://github.com/concourse/examples"}
+
+jobs:
+  - name: get-step
+    plan:
+      # there will be a volume named "concourse-examples"
+      # available in the job plan
+      - get: concourse-examples
+      - task: take-one-ouput
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: {repository: busybox}
+          inputs:
+            - name: concourse-examples
+          run:
+            path: /bin/sh
+            args:
+              - -cx
+              - |
+                ls -lah ./
+                cat ./concourse-examples/README.md
