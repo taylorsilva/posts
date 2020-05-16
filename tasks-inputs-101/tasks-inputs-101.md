@@ -21,44 +21,44 @@ This pipeline has two tasks. The first task outputs a file with the date. The se
 ```yaml
 ---
 jobs:
-  - name: a-job
-    plan:
-      - task: create-one-output
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: alpine}
-          outputs:
-            - name: the-output
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah
-                date > ./the-output/file
-      - task: read-ouput-from-previous-step
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: alpine}
-          # You must explicitly name the inputs you expect
-          # this task to have.
-          # If you don't then outputs from previous steps
-          # will not appear.
-          # The name must match the output from the previous step.
-          # Try removing or renaming the input to see what happens!
-          inputs:
-            - name: the-output
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah
-                cat ./the-output/file
+- name: a-job
+  plan:
+  - task: create-one-output
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: alpine}
+      outputs:
+        - name: the-output
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah
+            date > ./the-output/file
+  - task: read-ouput-from-previous-step
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: alpine}
+      # You must explicitly name the inputs you expect
+      # this task to have.
+      # If you don't then outputs from previous steps
+      # will not appear.
+      # The name must match the output from the previous step.
+      # Try removing or renaming the input to see what happens!
+      inputs:
+        - name: the-output
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah
+            cat ./the-output/file
 ```
 
 
@@ -75,108 +75,108 @@ This pipeline illustrates that you could accidentally overwrite the output from 
 ```yaml
 ---
 jobs:
-  - name: writing-to-the-same-output-in-parallel
-    plan:
-      # running two tasks that output in parallel?!?
-      # who will win??
-      - in_parallel:
-        - task: create-the-output
-          config:
-            platform: linux
-            image_resource:
-              type: registry-image
-              source: {repository: busybox}
-            outputs:
-              - name: the-output
-            run:
-              path: /bin/sh
-              args:
-                - -cx
-                - |
-                  ls -lah
-                  date > ./the-output/file1
-        - task: also-create-the-output
-          config:
-            platform: linux
-            image_resource:
-              type: registry-image
-              source: {repository: busybox}
-            outputs:
-              - name: the-output
-            run:
-              path: /bin/sh
-              args:
-                - -cx
-                - |
-                  ls -lah
-                  date > ./the-output/file2
-      # run this job multiple times to see which
-      # previous task wins each time
-      - task: read-ouput-from-previous-step
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          inputs:
-            - name: the-output
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah ./the-output
-                echo "Get ready to error!"
-                cat ./the-output/file1 ./the-output/file2
+- name: writing-to-the-same-output-in-parallel
+  plan:
+  # running two tasks that output in parallel?!?
+  # who will win??
+  - in_parallel:
+    - task: create-the-output
+      config:
+        platform: linux
+        image_resource:
+          type: registry-image
+          source: {repository: busybox}
+        outputs:
+          - name: the-output
+        run:
+          path: /bin/sh
+          args:
+            - -cx
+            - |
+              ls -lah
+              date > ./the-output/file1
+    - task: also-create-the-output
+      config:
+        platform: linux
+        image_resource:
+          type: registry-image
+          source: {repository: busybox}
+        outputs:
+          - name: the-output
+        run:
+          path: /bin/sh
+          args:
+            - -cx
+            - |
+              ls -lah
+              date > ./the-output/file2
+  # run this job multiple times to see which
+  # previous task wins each time
+  - task: read-ouput-from-previous-step
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: busybox}
+      inputs:
+        - name: the-output
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah ./the-output
+            echo "Get ready to error!"
+            cat ./the-output/file1 ./the-output/file2
 
-  - name: writing-to-the-same-output-serially
-    plan:
-      - task: create-one-output
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          outputs:
-            - name: the-output
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah
-                date > ./the-output/file1
-      - task: create-another-output
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          outputs:
-            - name: the-output
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah
-                date > ./the-output/file2
-      - task: read-ouput-from-previous-step
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          inputs:
-            - name: the-output
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah ./the-output
-                echo "Get ready to error!"
-                cat ./the-output/file1 ./the-output/file2
+- name: writing-to-the-same-output-serially
+  plan:
+  - task: create-one-output
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: busybox}
+      outputs:
+        - name: the-output
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah
+            date > ./the-output/file1
+  - task: create-another-output
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: busybox}
+      outputs:
+        - name: the-output
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah
+            date > ./the-output/file2
+  - task: read-ouput-from-previous-step
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: busybox}
+      inputs:
+        - name: the-output
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah ./the-output
+            echo "Get ready to error!"
+            cat ./the-output/file1 ./the-output/file2
 ```
 
 ## Example Three - Input/Output Name Mapping
@@ -196,85 +196,85 @@ The fourth task tries to use the artifact named `the-output` as its input. This 
 ```yaml
 ---
 jobs:
-  - name: a-job
-    plan:
-      - task: create-one-output
-        # The task config has the artifact `the-output`
-        # output_mapping will rename `the-output` to `demo-disk`
-        # in the rest of the job's plan
-        output_mapping:
-          the-output: demo-disk
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          outputs:
-            - name: the-output
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah
-                date > ./the-output/file
-      # this task expects the artifact `demo-disk` so no mapping is needed
-      - task: read-ouput-from-previous-step
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          inputs:
-            - name: demo-disk
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah
-                cat ./demo-disk/file
-      - task: rename-and-read-output
-        # This task expects the artifact `generic-input`.
-        # input_mapping will map the tasks `generic-input` to
-        # the job plans `demo-disk` artifact
-        input_mapping:
-          generic-input: demo-disk
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          inputs:
-            - name: generic-input
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah
-                cat ./generic-input/file
-      - task: try-and-read-the-output
-        input_mapping:
-          generic-input: demo-disk
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          # `the-output` is not available in the job plan
-          # so this task will error while initializing
-          # since there's no artiact named `the-output` in
-          # the job's plan
-          inputs:
-            - name: the-output
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah
-                cat ./generic-input/file
+- name: a-job
+  plan:
+  - task: create-one-output
+    # The task config has the artifact `the-output`
+    # output_mapping will rename `the-output` to `demo-disk`
+    # in the rest of the job's plan
+    output_mapping:
+      the-output: demo-disk
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: busybox}
+      outputs:
+        - name: the-output
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah
+            date > ./the-output/file
+  # this task expects the artifact `demo-disk` so no mapping is needed
+  - task: read-ouput-from-previous-step
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: busybox}
+      inputs:
+        - name: demo-disk
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah
+            cat ./demo-disk/file
+  - task: rename-and-read-output
+    # This task expects the artifact `generic-input`.
+    # input_mapping will map the tasks `generic-input` to
+    # the job plans `demo-disk` artifact
+    input_mapping:
+      generic-input: demo-disk
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: busybox}
+      inputs:
+        - name: generic-input
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah
+            cat ./generic-input/file
+  - task: try-and-read-the-output
+    input_mapping:
+      generic-input: demo-disk
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: busybox}
+      # `the-output` is not available in the job plan
+      # so this task will error while initializing
+      # since there's no artiact named `the-output` in
+      # the job's plan
+      inputs:
+        - name: the-output
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah
+            cat ./generic-input/file
 ```
 
 ## Example Four - Can you add files to an existing output artifact?
@@ -290,57 +290,57 @@ This means you can pass something between a bunch of tasks and have each task ad
 ```yaml
 ---
 jobs:
-  - name: add-file-to-output
-    plan:
-      - task: create-one-output
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          outputs:
-            - name: the-output
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah
-                date > ./the-output/file1
-      - task: add-file-to-previous-output
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          # this task lists the same artifact as
-          # its input and output
-          inputs:
-            - name: the-output
-          outputs:
-            - name: the-output
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah
-                date > ./the-output/file2
-      - task: read-ouput-from-previous-step
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          inputs:
-            - name: the-output
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah ./the-output
-                cat ./the-output/file1 ./the-output/file2
+- name: add-file-to-output
+  plan:
+  - task: create-one-output
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: busybox}
+      outputs:
+        - name: the-output
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah
+            date > ./the-output/file1
+  - task: add-file-to-previous-output
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: busybox}
+      # this task lists the same artifact as
+      # its input and output
+      inputs:
+        - name: the-output
+      outputs:
+        - name: the-output
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah
+            date > ./the-output/file2
+  - task: read-ouput-from-previous-step
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: busybox}
+      inputs:
+        - name: the-output
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah ./the-output
+            cat ./the-output/file1 ./the-output/file2
 ```
 
 ## Example Five - Multiple Outputs
@@ -352,68 +352,68 @@ The answer is no. A task will only get the artifacts that match the name of the 
 ```yaml
 ---
 jobs:
-  - name: multiple-outputs
-    plan:
-      - task: create-three-outputs
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          outputs:
-            - name: the-output-1
-            - name: the-output-2
-            - name: the-output-3
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah
-                date > ./the-output-1/file
-                date > ./the-output-2/file
-                date > ./the-output-3/file
-      - task: take-one-ouput
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          # only one of the three outputs are
-          # listed as inputs
-          inputs:
-            - name: the-output-1
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah ./
-                cat ./the-output-1/file
-      - task: take-two-ouputs
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          # this task pulls in the other
-          # two outputs, just for fun!
-          inputs:
-            - name: the-output-2
-            - name: the-output-3
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah ./
-                cat ./the-output-2/file
-                cat ./the-output-3/file
+- name: multiple-outputs
+  plan:
+  - task: create-three-outputs
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: busybox}
+      outputs:
+        - name: the-output-1
+        - name: the-output-2
+        - name: the-output-3
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah
+            date > ./the-output-1/file
+            date > ./the-output-2/file
+            date > ./the-output-3/file
+  - task: take-one-ouput
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: busybox}
+      # only one of the three outputs are
+      # listed as inputs
+      inputs:
+        - name: the-output-1
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah ./
+            cat ./the-output-1/file
+  - task: take-two-ouputs
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: busybox}
+      # this task pulls in the other
+      # two outputs, just for fun!
+      inputs:
+        - name: the-output-2
+        - name: the-output-3
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah ./
+            cat ./the-output-2/file
+            cat ./the-output-3/file
 ```
 
 ## Example Six - Get Steps
 
-The majority of Concourse pipelines have at least one resource, which means they have at least one [get step](https://concourse-ci.org/jobs.html#get-step). Using a get step in a job makes a artifact with the name of the get step available for later steps in the [job plan](https://concourse-ci.org/jobs.html#schema.job.plan) to consume as inputs.
+The majority of Concourse pipelines have at least one resource, which means they have at least one [get step](https://concourse-ci.org/jobs.html#get-step). Using a get step in a job makes an artifact with the name of the get step available for later steps in the [job plan](https://concourse-ci.org/jobs.html#schema.job.plan) to consume as inputs.
 
 ```yaml
 ---
@@ -423,26 +423,26 @@ resources:
   source: {uri: "https://github.com/concourse/examples"}
 
 jobs:
-  - name: get-step
-    plan:
-      # there will be an artifact named
-      # "concourse-examples" available in the job plan
-      - get: concourse-examples
-      - task: take-one-ouput
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          inputs:
-            - name: concourse-examples
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah ./
-                cat ./concourse-examples/README.md
+- name: get-step
+  plan:
+  # there will be an artifact named
+  # "concourse-examples" available in the job plan
+  - get: concourse-examples
+  - task: take-one-ouput
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: busybox}
+      inputs:
+        - name: concourse-examples
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah ./
+            cat ./concourse-examples/README.md
 ```
 
 I hope you found these example helpful with figuring out how inputs and outputs work within a single Concourse job.
