@@ -30,6 +30,8 @@ jobs:
         type: registry-image
         source: {repository: alpine}
       outputs:
+        # Concourse will make an empty dir with this name
+        # and save the contents for later steps
         - name: the-output
       run:
         path: /bin/sh
@@ -47,7 +49,7 @@ jobs:
       # You must explicitly name the inputs you expect
       # this task to have.
       # If you don't then outputs from previous steps
-      # will not appear.
+      # will not appear in th step's container.
       # The name must match the output from the previous step.
       # Try removing or renaming the input to see what happens!
       inputs:
@@ -64,11 +66,11 @@ jobs:
 
 ## Example Two - Two tasks with the same output, who wins?
 
-This example is to statisfy the curiousity cat inside all of us! Never do this in real life because you're definitely going to hurt yourself!
+This example is to satisfy the curiosity cat inside all of us! Never do this in real life because you're definitely going to hurt yourself!
 
-There are two jobs in this pipeline. The first job has two [step](https://concourse-ci.org/jobs.html#steps)s that will produce an artifact named `the-output` in parallel. If you run the `writing-to-the-same-output-in-parallel` job multiple times you'll see the file in `the-output` folder changes depending on which of the parallel tasks finished last.
+There are two jobs in this pipeline. The first job has two [step](https://concourse-ci.org/jobs.html#steps)s; both steps will produce an artifact named `the-output` in parallel. If you run the `writing-to-the-same-output-in-parallel` job multiple times you'll see the file in `the-output` folder changes depending on which of the parallel tasks finished last.
 
-The second job is a serial version of the first job. In this job the second task always wins because it's the last task that outputs `'the-output`, so only `file2` will be in `the-output` directory in the last [step](https://concourse-ci.org/jobs.html#steps) in the [job plan](https://concourse-ci.org/jobs.html#schema.job.plan).
+The second job is a serial version of the first job. In this job the second task always wins because it's the last task that outputs `the-output`, so only `file2` will be in `the-output` directory in the last [step](https://concourse-ci.org/jobs.html#steps) in the [job plan](https://concourse-ci.org/jobs.html#schema.job.plan).
 
 This pipeline illustrates that you could accidentally overwrite the output from a previous [step](https://concourse-ci.org/jobs.html#steps) if you're not careful with the names of your outputs.
 
@@ -185,7 +187,7 @@ Sometimes the names of inputs and outputs don't match, or they do match and you 
 
 This pipeline has one job with four tasks.
 
-The first task outputs a file with the date to the `the-ouput` directory. `the-output` is mapped to the new name `demo-disk`.  The artifact `demo-disk` is now available in the rest of the [job plan](https://concourse-ci.org/jobs.html#schema.job.plan) for future [step](https://concourse-ci.org/jobs.html#steps)s to take as inputs. The remaining steps do this in various ways.
+The first task outputs a file with the date to the `the-output` directory. `the-output` is mapped to the new name `demo-disk`.  The artifact `demo-disk` is now available in the rest of the [job plan](https://concourse-ci.org/jobs.html#schema.job.plan) for future [step](https://concourse-ci.org/jobs.html#steps)s to take as inputs. The remaining steps do this in various ways.
 
 The second task reads and prints the contents of the file under the new name `demo-disk`.
 
@@ -283,7 +285,7 @@ This pipeline will also have two jobs in order to illustrate this point. What ha
 
 The first task will create `the-output` with `file1`. The second task will add `file2` to the `the-output`. The last task will read the contents of `file1` and `file2`.
 
-As long as you redeclare the input as an output in the second task you can modify any of your outputs.
+As long as you re-declare the input as an output in the second task you can modify any of your outputs.
 
 This means you can pass something between a bunch of tasks and have each task add or modify something in the artifact.
 
@@ -345,7 +347,7 @@ jobs:
 
 ## Example Five - Multiple Outputs
 
-What happens if you have a task that has multple outputs and a second task that only lists one of the outputs? Does the second task get the extra outputs from the first task?
+What happens if you have a task that has multiple outputs and a second task that only lists one of the outputs? Does the second task get the extra outputs from the first task?
 
 The answer is no. A task will only get the artifacts that match the name of the inputs listed in the task's config.
 
@@ -373,7 +375,7 @@ jobs:
             date > ./the-output-1/file
             date > ./the-output-2/file
             date > ./the-output-3/file
-  - task: take-one-ouput
+  - task: take-one-output
     config:
       platform: linux
       image_resource:
@@ -390,7 +392,7 @@ jobs:
           - |
             ls -lah ./
             cat ./the-output-1/file
-  - task: take-two-ouputs
+  - task: take-two-outputs
     config:
       platform: linux
       image_resource:
@@ -428,7 +430,7 @@ jobs:
   # there will be an artifact named
   # "concourse-examples" available in the job plan
   - get: concourse-examples
-  - task: take-one-ouput
+  - task: take-one-output
     config:
       platform: linux
       image_resource:
