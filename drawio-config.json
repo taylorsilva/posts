@@ -4,7 +4,8 @@
     "4a90e2",
     "fbc40f",
     "ed4b35",
-    "929497"
+    "929497",
+    "8b572a"
   ],
   "customFonts": [
     "Segoe UI",
@@ -29,7 +30,7 @@
       },
       {
         "fill": "none",
-        "stroke": "#fbc40f",
+        "stroke": "#f1c40f",
         "font": "#000000"
       },
       {
@@ -45,6 +46,11 @@
       {
         "fill": "none",
         "stroke": "#000000",
+        "font": "#000000"
+      },
+      {
+        "fill": "none",
+        "stroke": "#f5a624",
         "font": "#000000"
       }
     ]
