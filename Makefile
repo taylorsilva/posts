@@ -1,5 +1,5 @@
 
-%.gif:
+%.gifs:
 	for dir in ./$*/diagrams/*/ ; do \
 		dir=$${dir%*/} ; \
 		convert -delay 375 ./$$dir/*.png ./$$dir/example-one.gif ; \
