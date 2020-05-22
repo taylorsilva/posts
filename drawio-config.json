@@ -1,0 +1,73 @@
+{
+  "customPresetColors": [
+    "12c560",
+    "4a90e2",
+    "fbc40f",
+    "ed4b35",
+    "929497"
+  ],
+  "customFonts": [
+    "Segoe UI",
+    "Segoe Script",
+    "Open Sans",
+    "Helvetica",
+    "Patrick Hand",
+    "Roboto"
+  ],
+  "customColorSchemes": [
+    [
+      {},
+      {
+        "fill": "none",
+        "stroke": "#12c560",
+        "font": "#000000"
+      },
+      {
+        "fill": "none",
+        "stroke": "#4a90e2",
+        "font": "#000000"
+      },
+      {
+        "fill": "none",
+        "stroke": "#fbc40f",
+        "font": "#000000"
+      },
+      {
+        "fill": "none",
+        "stroke": "#ed4b35",
+        "font": "#000000"
+      },
+      {
+        "fill": "none",
+        "stroke": "#929497",
+        "font": "#000000"
+      },
+      {
+        "fill": "none",
+        "stroke": "#000000",
+        "font": "#000000"
+      }
+    ]
+  ],
+  "defaultVertexStyle": {
+    "fontFamily": "Roboto",
+    "fontSize": "12",
+    "strokeWidth": "1",
+    "arcSize": "10",
+    "absoluteArcSize": "1",
+    "rounded": "0",
+    "shadow": "0",
+    "comic": "1"
+  },
+  "defaultEdgeStyle": {
+    "fontFamily": "Roboto",
+    "fontSize": "15",
+    "strokeWidth": "1",
+    "arcSize": "10",
+    "absoluteArcSize": "1",
+    "rounded": "0",
+    "shadow": "0",
+    "comic": "1"
+  },
+  "fontCss": "@import url('https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i,800,800i|Patrick+Hand:300,300i,400,400i,600,600i,700,700i,800,800i|Roboto:300,300i,400,400i,600,600i,700,700i,800,800i')"
+}
