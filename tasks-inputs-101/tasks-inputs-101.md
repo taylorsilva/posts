@@ -65,7 +65,7 @@ jobs:
 
 Here's a visual graphic of what happens when the above job is executed.
 
-![example one visual](diagram/example-one/example-one.gif)
+![example one visual](diagrams/example-one/example-one.gif)
 
 
 ## Example Two - Two tasks with the same output, who wins?
