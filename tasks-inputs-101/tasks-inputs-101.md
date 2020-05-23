@@ -72,9 +72,13 @@ Here's a visual graphic of what happens when the above job is executed.
 
 This example is to satisfy the curiosity cat inside all of us! Never do this in real life because you're definitely going to hurt yourself!
 
-There are two jobs in this pipeline. The first job has two [step](https://concourse-ci.org/jobs.html#steps)s; both steps will produce an artifact named `the-output` in parallel. If you run the `writing-to-the-same-output-in-parallel` job multiple times you'll see the file in `the-output` folder changes depending on which of the parallel tasks finished last.
+There are two jobs in this pipeline. The first job has two [step](https://concourse-ci.org/jobs.html#steps)s; both steps will produce an artifact named `the-output` in parallel. If you run the `writing-to-the-same-output-in-parallel` job multiple times you'll see the file in `the-output` folder changes depending on which of the parallel tasks finished last. Here's a visualization of the first job.
+
+![example two parallel visual](diagrams/example-two-parallel/example-two-parallel.gif)
 
 The second job is a serial version of the first job. In this job the second task always wins because it's the last task that outputs `the-output`, so only `file2` will be in `the-output` directory in the last [step](https://concourse-ci.org/jobs.html#steps) in the [job plan](https://concourse-ci.org/jobs.html#schema.job.plan).
+
+![example two serial visual](diagrams/example-two-serial/example-two-serial.gif)
 
 This pipeline illustrates that you could accidentally overwrite the output from a previous [step](https://concourse-ci.org/jobs.html#steps) if you're not careful with the names of your outputs.
 
@@ -198,6 +202,12 @@ The second task reads and prints the contents of the file under the new name `de
 The third task reads and prints the contents of the file under another name, `generic-input`. The `demo-disk` artifact in the [job plan](https://concourse-ci.org/jobs.html#schema.job.plan) is mapped to `generic-input`.
 
 The fourth task tries to use the artifact named `the-output` as its input. This task fails to even start because there was no artifact with the name `the-output` available in the [job plan](https://concourse-ci.org/jobs.html#schema.job.plan); it was remapped to `demo-disk`.
+
+Here's a visualization of the job.
+
+![example three visual](diagrams/example-three/example-three.gif)
+
+Here's the pipeline YAML for you to run on your local Concourse.
 
 ```yaml
 ---
@@ -349,6 +359,10 @@ jobs:
             cat ./the-output/file1 ./the-output/file2
 ```
 
+Here's a visualization of the job.
+
+![example four visual](diagrams/example-four/example-four.gif)
+
 ## Example Five - Multiple Outputs
 
 What happens if you have a task that has multiple outputs and a second task that only lists one of the outputs? Does the second task get the extra outputs from the first task?
@@ -417,6 +431,10 @@ jobs:
             cat ./the-output-3/file
 ```
 
+Here's a visualization of the job.
+
+![example five visual](diagrams/example-five/example-five.gif)
+
 ## Example Six - Get Steps
 
 The majority of Concourse pipelines have at least one resource, which means they have at least one [get step](https://concourse-ci.org/jobs.html#get-step). Using a get step in a job makes an artifact with the name of the get step available for later steps in the [job plan](https://concourse-ci.org/jobs.html#schema.job.plan) to consume as inputs.
@@ -450,5 +468,8 @@ jobs:
             ls -lah ./
             cat ./concourse-examples/README.md
 ```
+Here's a visualization of the job.
+
+![example six visual](diagrams/example-six/example-six.gif)
 
 I hope you found these example helpful with figuring out how inputs and outputs work within a single Concourse job.
