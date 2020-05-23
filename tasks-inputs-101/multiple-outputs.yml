@@ -1,57 +1,60 @@
 ---
+---
 jobs:
-  - name: multiple-outputs
-    plan:
-      - task: create-three-outputs
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          outputs:
-            - name: the-output-1
-            - name: the-output-2
-            - name: the-output-3
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah
-                date > ./the-output-1/file
-                date > ./the-output-2/file
-                date > ./the-output-3/file
-      - task: take-one-ouput
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          # only one of the three outputs are
-          # listed as inputs
-          inputs:
-            - name: the-output-1
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah ./
-                cat ./the-output-1/file
-      - task: take-two-ouputs
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          inputs:
-            - name: the-output-2
-            - name: the-output-3
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah ./
-                cat ./the-output-2/file
-                cat ./the-output-3/file
+- name: multiple-outputs
+  plan:
+  - task: create-three-outputs
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: busybox}
+      outputs:
+        - name: the-output-1
+        - name: the-output-2
+        - name: the-output-3
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah
+            date > ./the-output-1/file
+            date > ./the-output-2/file
+            date > ./the-output-3/file
+  - task: take-one-output
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: busybox}
+      # only one of the three outputs are
+      # listed as inputs
+      inputs:
+        - name: the-output-1
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah ./
+            cat ./the-output-1/file
+  - task: take-two-outputs
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: busybox}
+      # this task pulls in the other
+      # two outputs, just for fun!
+      inputs:
+        - name: the-output-2
+        - name: the-output-3
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah ./
+            cat ./the-output-2/file
+            cat ./the-output-3/file

@@ -1,101 +1,104 @@
-# The first two tasks, running in parallel, will write to the same directory
-# but under different file names. What happens?
-# The final task will try reading from both files
-
+---
 jobs:
-  - name: writing-to-the-same-output-in-parallel
-    plan:
-      - in_parallel:
-        - task: create-one-output
-          config:
-            platform: linux
-            image_resource:
-              type: registry-image
-              source: {repository: busybox}
-            outputs:
-              - name: the-output
-            run:
-              path: /bin/sh
-              args:
-                - -cx
-                - |
-                  ls -lah
-                  date > ./the-output/file1
-        - task: create-another-output
-          config:
-            platform: linux
-            image_resource:
-              type: registry-image
-              source: {repository: busybox}
-            outputs:
-              - name: the-output
-            run:
-              path: /bin/sh
-              args:
-                - -cx
-                - |
-                  ls -lah
-                  date > ./the-output/file2
-      - task: read-ouput-from-previous-step
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          inputs:
-            - name: the-output
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah ./the-output
-                cat ./the-output/file1 ./the-output/file2
+- name: writing-to-the-same-output-in-parallel
+  plan:
+  # running two tasks that output in parallel?!?
+  # who will win??
+  - in_parallel:
+    - task: create-the-output
+      config:
+        platform: linux
+        image_resource:
+          type: registry-image
+          source: {repository: busybox}
+        outputs:
+          - name: the-output
+        run:
+          path: /bin/sh
+          args:
+            - -cx
+            - |
+              ls -lah
+              date > ./the-output/file1
+    - task: also-create-the-output
+      config:
+        platform: linux
+        image_resource:
+          type: registry-image
+          source: {repository: busybox}
+        outputs:
+          - name: the-output
+        run:
+          path: /bin/sh
+          args:
+            - -cx
+            - |
+              ls -lah
+              date > ./the-output/file2
+  # run this job multiple times to see which
+  # previous task wins each time
+  - task: read-ouput-from-previous-step
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: busybox}
+      inputs:
+        - name: the-output
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah ./the-output
+            echo "Get ready to error!"
+            cat ./the-output/file1 ./the-output/file2
 
-  - name: writing-to-the-same-output-serially
-    plan:
-      - task: create-one-output
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          outputs:
-            - name: the-output
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah
-                date > ./the-output/file1
-      - task: create-another-output
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          outputs:
-            - name: the-output
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah
-                date > ./the-output/file2
-      - task: read-ouput-from-previous-step
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          inputs:
-            - name: the-output
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah ./the-output
-                cat ./the-output/file1 ./the-output/file2
+- name: writing-to-the-same-output-serially
+  plan:
+  - task: create-one-output
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: busybox}
+      outputs:
+        - name: the-output
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah
+            date > ./the-output/file1
+  - task: create-another-output
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: busybox}
+      outputs:
+        - name: the-output
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah
+            date > ./the-output/file2
+  - task: read-ouput-from-previous-step
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: busybox}
+      inputs:
+        - name: the-output
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah ./the-output
+            echo "Get ready to error!"
+            cat ./the-output/file1 ./the-output/file2

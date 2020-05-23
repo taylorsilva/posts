@@ -1,51 +1,53 @@
 ---
 jobs:
-  - name: add-file-to-output
-    plan:
-      - task: create-one-output
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          outputs:
-            - name: the-output
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah
-                date > ./the-output/file1
-      - task: add-file-to-previous-output
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          inputs:
-            - name: the-output
-          outputs:
-            - name: the-output
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah
-                date > ./the-output/file2
-      - task: read-ouput-from-previous-step
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          inputs:
-            - name: the-output
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah ./the-output
-                cat ./the-output/file1 ./the-output/file2
+- name: add-file-to-output
+  plan:
+  - task: create-one-output
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: busybox}
+      outputs:
+        - name: the-output
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah
+            date > ./the-output/file1
+  - task: add-file-to-previous-output
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: busybox}
+      # this task lists the same artifact as
+      # its input and output
+      inputs:
+        - name: the-output
+      outputs:
+        - name: the-output
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah
+            date > ./the-output/file2
+  - task: read-ouput-from-previous-step
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: busybox}
+      inputs:
+        - name: the-output
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah ./the-output
+            cat ./the-output/file1 ./the-output/file2

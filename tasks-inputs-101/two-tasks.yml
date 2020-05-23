@@ -1,39 +1,42 @@
-# This pipeline has two tasks. The first task outputs a file with the date
-# The second task reads and prints the contents of the file
-
+---
 jobs:
-  - name: a-job
-    plan:
-      - task: create-one-output
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          outputs:
-            - name: the-output
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah
-                date > ./the-output/file
-      - task: read-ouput-from-previous-step
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: busybox}
-          # you must explicitly name the inputs you expect this task to have
-          # If you don't then outputs from previous steps will not appear
-          # Try removing the inputs to see what happens!
-          inputs:
-            - name: the-output
-          run:
-            path: /bin/sh
-            args:
-              - -cx
-              - |
-                ls -lah
-                cat ./the-output/file
+- name: a-job
+  plan:
+  - task: create-one-output
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: alpine}
+      outputs:
+        # Concourse will make an empty dir with this name
+        # and save the contents for later steps
+        - name: the-output
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah
+            date > ./the-output/file
+  - task: read-ouput-from-previous-step
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: alpine}
+      # You must explicitly name the inputs you expect
+      # this task to have.
+      # If you don't then outputs from previous steps
+      # will not appear in th step's container.
+      # The name must match the output from the previous step.
+      # Try removing or renaming the input to see what happens!
+      inputs:
+        - name: the-output
+      run:
+        path: /bin/sh
+        args:
+          - -cx
+          - |
+            ls -lah
+            cat ./the-output/file
