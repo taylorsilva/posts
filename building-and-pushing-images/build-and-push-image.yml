@@ -16,3 +16,27 @@ resources:
     repository: ((image-repo-name))/task-image
     username: ((docker-username))
     password: ((docker-password))
+
+jobs:
+- name: build-and-push
+  plan:
+  - get: concourse-examples
+  - task: build-task-image
+    privileged: true
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source:
+          repository: vito/oci-build-task
+      params:
+        CONTEXT: concourse-examples/Dockerfiles/simple
+      inputs:
+      - name: concourse-examples
+      outputs:
+      - name: image
+      run:
+        path: build
+  - put: task-image
+    params:
+      image: image/image.tar

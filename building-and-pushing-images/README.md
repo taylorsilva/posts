@@ -46,5 +46,12 @@ jobs:
 - name: build-and-push
   plan:
   - get: concourse-examples
-    
+  - task: build-task-image
+    config:
+      platform: linux
+      image_resource:
+          type: registry-image
+          source:
+            repository: vito/oci-build-task
+  - put: task-image
 ```
