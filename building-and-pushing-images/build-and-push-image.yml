@@ -9,11 +9,11 @@ resources:
     branch: master
 
 # Where we will push the image
-- name: task-image
+- name: simple-image
   type: registry-image
   icon: docker
   source:
-    repository: ((image-repo-name))/task-image
+    repository: ((image-repo-name))/simple-image
     username: ((docker-username))
     password: ((docker-password))
 
@@ -29,14 +29,14 @@ jobs:
         type: registry-image
         source:
           repository: vito/oci-build-task
-      params:
-        CONTEXT: concourse-examples/Dockerfiles/simple
       inputs:
       - name: concourse-examples
       outputs:
       - name: image
+      params:
+        CONTEXT: concourse-examples/Dockerfiles/simple
       run:
         path: build
-  - put: task-image
+  - put: simple-image
     params:
       image: image/image.tar
