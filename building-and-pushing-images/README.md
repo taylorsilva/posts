@@ -1,10 +1,10 @@
 # Building and Pushing Container Images
 
-In this blog post we are going to show how to build and push container images using the [oci-build task](https://github.com/vito/oci-build-task) and [registry-image resource](https://github.com/concourse/registry-image-resource). The first example will be very simple. More complex example images and pipelines will be provided later.
+In this blog post we are going to show how to build and push container images using the [oci-build task](https://github.com/vito/oci-build-task) and [registry-image resource](https://github.com/concourse/registry-image-resource). The example will be very simple because we want to focus on how to use this task and resource together.
 
-We will need a repo to store some files. All the files referenced in this blog post can be found in [github.com/concourse/examples](https://github.com/concourse/examples).
+_If you just want to see the pipeline, scroll down or [click here](https://github.com/concourse/examples/blob/master/pipelines/build-and-push-simple-image.yml). What follows is a detailed explanation of what each part of the pipeline does._
 
-First we need a Dockerfile. You can store this in your own repo or reference the [github.com/concourse/examples](https://github.com/concourse/examples) repo. The rest of this post assumes you use the [examples](https://github.com/concourse/examples) repo.
+First we need a Dockerfile. You can store this in your own repo or reference the [github.com/concourse/examples](https://github.com/concourse/examples) repo. The rest of this post assumes you use the [examples](https://github.com/concourse/examples) repo. All files in this blog post can be found in the examples repo.
 
 We are going to use a very basic [Dockerfile](https://github.com/concourse/examples/blob/master/Dockerfiles/simple/Dockerfile) so we can focus on the Concourse mechanics.
 
@@ -12,6 +12,8 @@ We are going to use a very basic [Dockerfile](https://github.com/concourse/examp
 FROM busybox
 
 RUN echo "I'm simple!"
+COPY ./stranger /stranger
+RUN cat /stranger
 ```
 
 Now we can start building out our pipeline. Let's declare our [resources](https://concourse-ci.org/resources.html) first. We will need one resource to pull in the repo where our Dockerfile is located, and a second resource pointing to where we want to push the built image to.
@@ -138,7 +140,7 @@ jobs:
       - name: image
 ```
 
-Next we need to tell the `oci-build-task` what the [build context](https://docs.docker.com/engine/reference/commandline/build/) of our Dockerfile is. The [`README`](https://github.com/vito/oci-build-task) goes over a few other methods of creating your build context. We are going to use the simplest use-case.
+Next we need to tell the `oci-build-task` what the [build context](https://docs.docker.com/engine/reference/commandline/build/) of our Dockerfile is. The [`README`](https://github.com/vito/oci-build-task) goes over a few other methods of creating your build context. We are going to use the simplest use-case. By specifying `CONTEXT` the `oci-build-task` assumes a `Dockerfile` and its build context are in the same directory.
 
 ```yaml
 jobs:
@@ -268,7 +270,26 @@ jobs:
       image: image/image.tar
 ```
 
+You can set the pipeline with this command:
 
----
+```
+fly -t <target> set-pipeline -p build-and-push-image \
+    -c ./examples/pipelines/build-and-push-simple-image.yml \
+    --var image-repo-name=<repo-name> \
+    --var docker-username=<user> \
+    --var docker-password=<password>
+```
 
-I want to show a pipeline that combines multiple inputs to create a build context
+
+![build-and-push-pipeline](build-and-publish-pipeline.png)
+
+### Adding Your Own Image Tags
+
+
+### Further Readings
+
+Understanding what the _build context_ is is important when building container images. You can read [Dockerfile Best Practices](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#understand-build-context) for more details on _build contexts_.
+
+The [inputs](https://github.com/vito/oci-build-task#inputs) section of the oci-bild-task's `README` has examples on how to build up a build context with multiple inputs.
+
+Read the `README`'s in the [oci-build-task](https://github.com/vito/oci-build-task) and [registry-image resource](https://github.com/concourse/registry-image-resource/) to learn more about their other configuration options.
