@@ -14,8 +14,8 @@ resources:
   icon: docker
   source:
     repository: ((image-repo-name))/simple-image
-    username: ((docker-username))
-    password: ((docker-password))
+    username: ((registry-username))
+    password: ((registry-password))
 
 jobs:
 - name: build-and-push
