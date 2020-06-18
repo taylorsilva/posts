@@ -1,12 +1,12 @@
 # Building and Pushing Container Images
 
-In this blog post we are going to show how to build and push container images using the [oci-build task](https://github.com/vito/oci-build-task) and [registry-image resource](https://github.com/concourse/registry-image-resource). This post assumes you understand how to build container images with `Dockerfile`'s and publish to [Docker Hub](https://hub.docker.com/) or another image registry.
+In this blog post we are going to show how to build and publish container images using the [oci-build task](https://github.com/vito/oci-build-task) and [registry-image resource](https://github.com/concourse/registry-image-resource). This post assumes you understand how to build container images with `Dockerfile`'s and publish to [Docker Hub](https://hub.docker.com/) or another image registry using the [`docker` cli](https://docs.docker.com/engine/reference/commandline/cli/).
 
-_If you just want to see the pipeline, scroll down or [click here](https://github.com/concourse/examples/blob/master/pipelines/build-and-push-simple-image.yml). What follows is a detailed explanation of what each part of the pipeline does._
+_If you just want to see the pipeline, scroll to the bottom or [click here](https://github.com/concourse/examples/blob/master/pipelines/build-and-push-simple-image.yml). What follows is a detailed explanation of what each part of the pipeline does._
 
 First we need a Dockerfile. You can store this in your own repo or reference the [github.com/concourse/examples](https://github.com/concourse/examples) repo. The rest of this post assumes you use the [examples](https://github.com/concourse/examples) repo. All files in this blog post can be found in the examples repo.
 
-We are going to use a very basic [Dockerfile](https://github.com/concourse/examples/blob/master/Dockerfiles/simple/Dockerfile) so we can focus on the Concourse mechanics.
+We are going to use a very basic [Dockerfile](https://github.com/concourse/examples/blob/master/Dockerfiles/simple/Dockerfile) so we can focus on the build the Concourse pipeline.
 
 ```
 FROM busybox
@@ -100,7 +100,7 @@ jobs:
           repository: vito/oci-build-task
 ```
 
-Next we will add [`concourse-examples`](https://github.com/concourse/examples) as an [input](https://concourse-ci.org/tasks.html#schema.task.inputs) to the task to ensure the artifact from the [get step](https://concourse-ci.org/jobs.html#get-step) is mounted in our `build-task-image` step.
+Next we will add [`concourse-examples`](https://github.com/concourse/examples) as an [input](https://concourse-ci.org/tasks.html#schema.task.inputs) to the build task to ensure the artifact from the [get step](https://concourse-ci.org/jobs.html#get-step) is mounted in our `build-task-image` step.
 
 ```yaml
 jobs:
@@ -119,7 +119,7 @@ jobs:
       - name: concourse-examples
 ```
 
-The `oci-build-task` [outputs the built image](https://github.com/vito/oci-build-task#outputs) in a directory called `image`. Let's add `image` as an output artifact of our task.
+The `oci-build-task` [outputs the built image](https://github.com/vito/oci-build-task#outputs) in a directory called `image`. Let's add `image` as an output artifact of our task so we can publish it later.
 
 ```yaml
 jobs:
@@ -192,7 +192,7 @@ At this point in our job the image is built! The `oci-build-task` has saved the 
 
 Now let's push the image to an image registry! For this example we're pushing to [Docker Hub](https://hub.docker.com/) using the [`registry-image` resource](https://github.com/concourse/registry-image-resource). You can use the `registry-image` resource to push to any image registry, private or public. Check out the [`README.md`](https://github.com/concourse/registry-image-resource/blob/master/README.md) for more details on using the resource.
 
-Pushing the image is simple, simply add a [put step](https://concourse-ci.org/jobs.html#put-step) to our job plan and tell the regstry-image resource where the tarball of the image is.
+To push the image add a [put step](https://concourse-ci.org/jobs.html#put-step) to our job plan and tell the regstry-image resource where the tarball of the image is.
 
 The put step will push the image using the information defined in the resource's [source](https://concourse-ci.org/resources.html#schema.resource.source).
 
@@ -270,7 +270,7 @@ jobs:
       image: image/image.tar
 ```
 
-You can set the pipeline with this command, updating the variable values with real values the pipeline can use. The behaviour is similar to [`docker push`](https://docs.docker.com/engine/reference/commandline/push/):
+You can set the pipeline with the following `fly` command, updating the variable values with real values the pipeline can use. The behaviour is similar to [`docker push`](https://docs.docker.com/engine/reference/commandline/push/):
 
 ```
 fly -t <target> set-pipeline -p build-and-push-image \
@@ -283,10 +283,10 @@ fly -t <target> set-pipeline -p build-and-push-image \
 
 ![build-and-push-pipeline](build-and-publish-pipeline.png)
 
-### Further Readings
+## Further Readings
 
-Understanding what the _build context_ is is important when building container images. You can read [Dockerfile Best Practices](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#understand-build-context) for more details on _build contexts_.
+Understanding what the _build context_ is is important when building container images. You can read [Dockerfile Best Practices](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#understand-build-context) for more details about _build contexts_.
 
-The [inputs](https://github.com/vito/oci-build-task#inputs) section of the oci-bild-task's `README` has examples on how to build up a build context with multiple inputs.
+The [inputs](https://github.com/vito/oci-build-task#inputs) section of the oci-bild-task's `README` has examples on how to build up a build context with multiple inputs and other complex build scenarios.
 
 Read the `README`'s in the [oci-build-task](https://github.com/vito/oci-build-task) and [registry-image resource](https://github.com/concourse/registry-image-resource/) to learn more about their other configuration options.
