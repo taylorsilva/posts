@@ -1,6 +1,6 @@
 # Building and Pushing Container Images
 
-In this blog post we are going to show how to build and push container images using the [oci-build task](https://github.com/vito/oci-build-task) and [registry-image resource](https://github.com/concourse/registry-image-resource). The example will be very simple because we want to focus on how to use this task and resource together.
+In this blog post we are going to show how to build and push container images using the [oci-build task](https://github.com/vito/oci-build-task) and [registry-image resource](https://github.com/concourse/registry-image-resource). This post assumes you understand how to build container images with `Dockerfile`'s and publish to [Docker Hub](https://hub.docker.com/) or another image registry.
 
 _If you just want to see the pipeline, scroll down or [click here](https://github.com/concourse/examples/blob/master/pipelines/build-and-push-simple-image.yml). What follows is a detailed explanation of what each part of the pipeline does._
 
@@ -36,8 +36,8 @@ resources:
   icon: docker
   source:
     repository: ((image-repo-name))/simple-image
-    username: ((docker-username))
-    password: ((docker-password))
+    username: ((registry-username))
+    password: ((registry-password))
 ```
 
 Next we will create a [job](https://concourse-ci.org/jobs.html) that will build and push our image.
@@ -242,8 +242,8 @@ resources:
   icon: docker
   source:
     repository: ((image-repo-name))/simple-image
-    username: ((docker-username))
-    password: ((docker-password))
+    username: ((registry-username))
+    password: ((registry-password))
 
 jobs:
 - name: build-and-push
@@ -270,21 +270,18 @@ jobs:
       image: image/image.tar
 ```
 
-You can set the pipeline with this command:
+You can set the pipeline with this command, updating the variable values with real values the pipeline can use. The behaviour is similar to [`docker push`](https://docs.docker.com/engine/reference/commandline/push/):
 
 ```
 fly -t <target> set-pipeline -p build-and-push-image \
     -c ./examples/pipelines/build-and-push-simple-image.yml \
     --var image-repo-name=<repo-name> \
-    --var docker-username=<user> \
-    --var docker-password=<password>
+    --var registry-username=<user> \
+    --var registry-password=<password>
 ```
 
 
 ![build-and-push-pipeline](build-and-publish-pipeline.png)
-
-### Adding Your Own Image Tags
-
 
 ### Further Readings
 
