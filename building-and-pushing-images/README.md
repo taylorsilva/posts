@@ -6,7 +6,7 @@ _If you just want to see the pipeline, scroll to the bottom or [click here](http
 
 First we need a Dockerfile. You can store this in your own repo or reference the [github.com/concourse/examples](https://github.com/concourse/examples) repo. The rest of this post assumes you use the [examples](https://github.com/concourse/examples) repo. All files in this blog post can be found in the examples repo.
 
-We are going to use a very basic [Dockerfile](https://github.com/concourse/examples/blob/master/Dockerfiles/simple/Dockerfile) so we can focus on the build the Concourse pipeline.
+We are going to use a very basic [Dockerfile](https://github.com/concourse/examples/blob/master/Dockerfiles/simple/Dockerfile) so we can focus on the building the Concourse pipeline.
 
 ```
 FROM busybox
