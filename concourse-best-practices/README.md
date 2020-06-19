@@ -28,8 +28,8 @@ jobs:
             path: echo
             args: ["Hello, world!"]
 ```
-Now let's break the pipeline up into two files:
-
+Now let's break the pipeline up into two files.
+_Note: we had to add a resource to make the task config availble in the pipeline_
 [_separate-task-config.yaml_](https://github.com/concourse/examples/blob/master/pipelines/separate-task-config.yml)
 ```yaml
 resources:
@@ -61,7 +61,7 @@ run:
   args: ["Hello, world!"]
 ```
 
-## Put Your CI Files in a Different Repo
+## Put Your CI Files in its Own Repo
 
 If your team works out of multiple repositories (repo) then moving all your CI files into a single repository is a common practice. The Concourse team works out of [many repositories](https://github.com/concourse/) so we keep all of our CI files in our [CI repo](https://github.com/concourse/ci).
 
@@ -86,13 +86,13 @@ An alternative, keeping the task config and script together:
     /tasks
         /test
             test.yml
-            test.sh
+            run.sh
         /build
             build.yml
-            build.sh
+            run.sh
 ```
 
-I have seen layouts where pipelines are heavily templated and broken into individual files for [Jobs](https://concourse-ci.org/jobs.html) and [Resources](https://concourse-ci.org/resources.html). It can become very hard to get a clear picture in your head of what the entire pipeline looks like if you break a single pipeline down into many files.
+We have seen layouts where pipelines are heavily templated and broken into individual files for [Jobs](https://concourse-ci.org/jobs.html) and [Resources](https://concourse-ci.org/resources.html). It can become very hard to get a clear picture in your head of what the entire pipeline looks like if you break a single pipeline down into many files.
 
 ## Create A Common Task Image(s)
 
