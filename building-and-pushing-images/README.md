@@ -6,7 +6,9 @@ _If you just want to see the pipeline, scroll to the bottom or [click here](http
 
 First we need a Dockerfile. You can store this in your own repo or reference the [github.com/concourse/examples](https://github.com/concourse/examples) repo. The rest of this post assumes you use the [examples](https://github.com/concourse/examples) repo. All files in this blog post can be found in the examples repo.
 
-We are going to use a very basic [Dockerfile](https://github.com/concourse/examples/blob/master/Dockerfiles/simple/Dockerfile) so we can focus on the building the Concourse pipeline.
+## The Dockerfile
+
+We are going to use a very basic [Dockerfile](https://github.com/concourse/examples/blob/master/Dockerfiles/simple/Dockerfile) so we can focus on building the Concourse pipeline.
 
 ```
 FROM busybox
@@ -16,7 +18,9 @@ COPY ./stranger /stranger
 RUN cat /stranger
 ```
 
-Now we can start building out our pipeline. Let's declare our [resources](https://concourse-ci.org/resources.html) first. We will need one resource to pull in the repo where our Dockerfile is located, and a second resource pointing to where we want to push the built image to.
+## Defining Pipeline Resources
+
+Now we can start building out our pipeline. Let's declare our [resources](https://concourse-ci.org/resources.html) first. We will need one resource to pull in the repo where our Dockerfile is located, and a second resource pointing to where we want to push the built container image to.
 
 _There are some [variables](https://concourse-ci.org/pipeline-vars-example.html#variables) in this file that we will fill out later._
 
@@ -40,12 +44,16 @@ resources:
     password: ((registry-password))
 ```
 
-Next we will create a [job](https://concourse-ci.org/jobs.html) that will build and push our image.
+## Create a Job
+
+Next we will create a [job](https://concourse-ci.org/jobs.html) that will build and push our container image.
 
 ```yaml
 jobs:
 - name: build-and-push
 ```
+
+### Retrieve the Dockerfile
 
 The first [step](https://concourse-ci.org/jobs.html#schema.step) in the [job plan](https://concourse-ci.org/jobs.html#schema.job.plan) will be to retrieve the repo where our Dockerfile is.
 
@@ -56,9 +64,11 @@ jobs:
   - get: concourse-examples
 ```
 
-The second step will build the image.
+### Build the image
 
-To build the image we are going to use the [oci-build-task](https://github.com/vito/oci-build-task). The [oci-build-task](https://github.com/vito/oci-build-task) is an image that is meant to be used in a Concourse [task](https://concourse-ci.org/tasks.html) to build container images. Check out the [`README`](https://github.com/vito/oci-build-task/blob/master/README.md) in the repo for more details on how to configure and use the [oci-build-task](https://github.com/vito/oci-build-task) in more complex build scenarios.
+The second step in our job will build the container image.
+
+To build the container image we are going to use the [oci-build-task](https://github.com/vito/oci-build-task). The [oci-build-task](https://github.com/vito/oci-build-task) is a container image that is meant to be used in a Concourse [task](https://concourse-ci.org/tasks.html) to build other container images. Check out the [`README`](https://github.com/vito/oci-build-task/blob/master/README.md) in the repo for more details on how to configure and use the [oci-build-task](https://github.com/vito/oci-build-task) in more complex build scenarios.
 
 Let's add a [task](https://concourse-ci.org/tasks.html) to our [job plan](https://concourse-ci.org/jobs.html#schema.job.plan) and give it a name.
 
@@ -83,7 +93,7 @@ jobs:
       platform: linux
 ```
 
-To use the `oci-build-task` image we specify the [`image_resource`](https://concourse-ci.org/tasks.html#schema.task.image_resource) that the task should use.
+To use the `oci-build-task` container image we specify the [`image_resource`](https://concourse-ci.org/tasks.html#schema.task.image_resource) that the task should use.
 
 ```yaml
 jobs:
@@ -119,7 +129,7 @@ jobs:
       - name: concourse-examples
 ```
 
-The `oci-build-task` [outputs the built image](https://github.com/vito/oci-build-task#outputs) in a directory called `image`. Let's add `image` as an output artifact of our task so we can publish it later.
+The `oci-build-task` [outputs the built container image](https://github.com/vito/oci-build-task#outputs) in a directory called `image`. Let's add `image` as an output artifact of our task so we can publish it in a later step.
 
 ```yaml
 jobs:
@@ -163,7 +173,7 @@ jobs:
         CONTEXT: concourse-examples/Dockerfiles/simple
 ```
 
-The last step is specifying what our `build-task-image` should execute. The `oci-build-task` image has a binary named [`build`](https://github.com/vito/oci-build-task/blob/230df3baa27fb389484ee0fb74355cd8b7977298/Dockerfile#L11) located in its `PATH` in the [`/usr/bin` directory](https://github.com/vito/oci-build-task/blob/230df3baa27fb389484ee0fb74355cd8b7977298/Dockerfile#L15). We'll tell our task to execute that binary, which will build our image.
+The last step is specifying what our `build-task-image` should execute. The `oci-build-task` container image has a binary named [`build`](https://github.com/vito/oci-build-task/blob/230df3baa27fb389484ee0fb74355cd8b7977298/Dockerfile#L11) located in its `PATH` in the [`/usr/bin` directory](https://github.com/vito/oci-build-task/blob/230df3baa27fb389484ee0fb74355cd8b7977298/Dockerfile#L15). We'll tell our task to execute that binary, which will build our container image.
 
 ```yaml
 jobs:
@@ -188,15 +198,17 @@ jobs:
         path: build
 ```
 
-At this point in our job the image is built! The `oci-build-task` has saved the image as a tarball named `image.tar` in the `image` artifact specified in the task outputs. This tar file is the same output you would get if you built the image using Docker and then did [`docker save`](https://docs.docker.com/engine/reference/commandline/save/).
+At this point in our job the container image is built! The `oci-build-task` has saved the container image as a tarball named `image.tar` in the `image` artifact specified in the task outputs. This tar file is the same output you would get if you built the container image using Docker and then did [`docker save`](https://docs.docker.com/engine/reference/commandline/save/).
 
-Now let's push the image to an image registry! For this example we're pushing to [Docker Hub](https://hub.docker.com/) using the [`registry-image` resource](https://github.com/concourse/registry-image-resource). You can use the `registry-image` resource to push to any image registry, private or public. Check out the [`README.md`](https://github.com/concourse/registry-image-resource/blob/master/README.md) for more details on using the resource.
+## Publish the Container Image
 
-To push the image add a [put step](https://concourse-ci.org/jobs.html#put-step) to our job plan and tell the regstry-image resource where the tarball of the image is.
+Now let's push the container image to an image registry! For this example we're pushing to [Docker Hub](https://hub.docker.com/) using the [`registry-image` resource](https://github.com/concourse/registry-image-resource). You can use the `registry-image` resource to push to any image registry, private or public. Check out the [`README.md`](https://github.com/concourse/registry-image-resource/blob/master/README.md) for more details on using the resource.
 
-The put step will push the image using the information defined in the resource's [source](https://concourse-ci.org/resources.html#schema.resource.source).
+To push the container image add a [put step](https://concourse-ci.org/jobs.html#put-step) to our job plan and tell the regstry-image resource where the tarball of the container image is.
 
-This is where you'll need to replace the three [variables](https://concourse-ci.org/vars.html) found under `resource_types`. You can define them [statically](https://concourse-ci.org/vars.html#static-vars) using `fly`'s `--var` flag when [setting](https://concourse-ci.org/setting-pipelines.html) the pipeline. _(In production make sure to use [credential management](https://concourse-ci.org/creds.html) to store your secrets!)_
+The put step will push the container image using the information defined in the resource's [source](https://concourse-ci.org/resources.html#schema.resource.source), when we defined the [pipeline's resources](https://concourse-ci.org/pipelines.html#schema.pipeline.resources).
+
+This is where you'll need to replace the three [variables](https://concourse-ci.org/vars.html) found under `resource_types`. You can define them [statically](https://concourse-ci.org/vars.html#static-vars) using `fly`'s `--var` flag when [setting](https://concourse-ci.org/setting-pipelines.html) the pipeline. _(In production make sure to use a [credential management system](https://concourse-ci.org/creds.html) to store your secrets!)_
 
 ```yaml
 jobs:
@@ -223,6 +235,8 @@ jobs:
     params:
       image: image/image.tar
 ```
+
+## The Entire Pipeline
 
 Putting all the pieces together, here is our pipeline.
 
@@ -287,8 +301,8 @@ fly -t <target> set-pipeline -p build-and-push-image \
 
 Understanding what the _build context_ is is important when building container images. You can read [Dockerfile Best Practices](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#understand-build-context) for more details about _build contexts_.
 
-The [inputs](https://github.com/vito/oci-build-task#inputs) section of the oci-build-task's `README` has examples on how to build up a build context with multiple inputs and other complex build scenarios.
+The [inputs](https://github.com/vito/oci-build-task#inputs) section of the oci-build-task's `README` has examples on how to create a build context with multiple inputs and other complex build scenarios.
 
 Read the `README`'s in the [oci-build-task](https://github.com/vito/oci-build-task) and [registry-image resource](https://github.com/concourse/registry-image-resource/) to learn more about their other configuration options.
 
-If you want to learn more about how artifacts are passed between the steps of jobs read our previous blog post about [task inputs and outputs](../tasks-inputs-101/README.md).
+If you had trouble following how the artifacts get passed between the steps of a job then read our other blog post about [task inputs and outputs](../tasks-inputs-101/README.md).
