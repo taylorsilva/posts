@@ -64,7 +64,7 @@ jobs:
   - get: concourse-examples
 ```
 
-### Build the image
+### Build the Container Image
 
 The second step in our job will build the container image.
 
@@ -238,7 +238,7 @@ jobs:
 
 ## The Entire Pipeline
 
-Putting all the pieces together, here is our pipeline.
+Putting all the pieces together, here is our pipeline that builds and pushes (publishes) a container image.
 
 ```yaml
 resources:
