@@ -3,11 +3,63 @@
 These are not necessarily "best" practices, they are common practices that we see a lot of teams follow
 
 > There is no Best Practice. There’s just practice.
-> - Kelsey Hightower
+> - [Kelsey Hightower](https://www.youtube.com/watch?v=d_lFZtlM5KI)
 
-Kelsey is definitely not the [first ](https://www.satisfice.com/blog/archives/5164) [person](http://blogs.tedneward.com/post/there-is-no-such-thing-as-best-practices-context-matters/) to say this but I found the quote fitting for this post. What follows are various "common" practices that we see many teams who use Concourse end up following.
+Kelsey is definitely not the [first](https://www.satisfice.com/blog/archives/5164) [person](http://blogs.tedneward.com/post/there-is-no-such-thing-as-best-practices-context-matters/) to say this, but I found the quote fitting for this post. What follows are various "common" practices that we see many teams who use Concourse end up following.
 
-## Put Tasks Config's in their own files
+## Put Task Config's in their own files
+
+The [Task Step](https://concourse-ci.org/jobs.html#task-step) has this field, [config](https://concourse-ci.org/jobs.html#schema.step.task-step.config), where you can embed an enitre [Task Config](https://concourse-ci.org/tasks.html#schema.task) in your pipeline. This is helpful if you are building a pipeline and trying to get a feel for how many and what tasks your pipeline needs. Once you are past this pipeline development phase though you should move the [Task Config]() out to its own file.
+
+### Example
+Here's an example. When you are first writing your pipeline you may write it with the [Task Config]() embedded in the [Task step]() like this:
+```yaml
+jobs:
+  - name: job
+    public: true
+    plan:
+      - task: simple-task
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: { repository: busybox }
+          run:
+            path: echo
+            args: ["Hello, world!"]
+```
+Now let's break the pipeline up into two files:
+
+[_separate-task-config.yaml_](https://github.com/concourse/examples/blob/master/pipelines/separate-task-config.yml)
+```yaml
+resources:
+  - name: concourse-examples
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/concourse/examples
+
+jobs:
+  - name: job
+    public: true
+    plan:
+      - get: concourse-examples
+      - task: simple-task
+        file: concourse-examples/tasks/hello-world.yml
+```
+
+[_hello-world.yml_](https://github.com/concourse/examples/blob/master/tasks/hello-world.yml)
+```yaml
+platform: linux
+
+image_resource:
+  type: registry-image
+  source: { repository: busybox }
+
+run:
+  path: echo
+  args: ["Hello, world!"]
+```
 
 ## Put Your CI Files in a Different Repo
 
