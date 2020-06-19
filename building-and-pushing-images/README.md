@@ -287,6 +287,8 @@ fly -t <target> set-pipeline -p build-and-push-image \
 
 Understanding what the _build context_ is is important when building container images. You can read [Dockerfile Best Practices](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#understand-build-context) for more details about _build contexts_.
 
-The [inputs](https://github.com/vito/oci-build-task#inputs) section of the oci-bild-task's `README` has examples on how to build up a build context with multiple inputs and other complex build scenarios.
+The [inputs](https://github.com/vito/oci-build-task#inputs) section of the oci-build-task's `README` has examples on how to build up a build context with multiple inputs and other complex build scenarios.
 
 Read the `README`'s in the [oci-build-task](https://github.com/vito/oci-build-task) and [registry-image resource](https://github.com/concourse/registry-image-resource/) to learn more about their other configuration options.
+
+If you want to learn more about how artifacts are passed between the steps of jobs read our previous blog post about [task inputs and outputs](../tasks-inputs-101/README.md).
