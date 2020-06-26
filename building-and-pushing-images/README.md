@@ -188,12 +188,12 @@ jobs:
         type: registry-image
         source:
           repository: vito/oci-build-task
-      params:
-        CONTEXT: concourse-examples/Dockerfiles/simple
       inputs:
       - name: concourse-examples
       outputs:
       - name: image
+      params:
+        CONTEXT: concourse-examples/Dockerfiles/simple
       run:
         path: build
 ```
@@ -223,12 +223,12 @@ jobs:
         type: registry-image
         source:
           repository: vito/oci-build-task
-      params:
-        CONTEXT: concourse-examples/Dockerfiles/simple
       inputs:
       - name: concourse-examples
       outputs:
       - name: image
+      params:
+        CONTEXT: concourse-examples/Dockerfiles/simple
       run:
         path: build
   - put: simple-image
