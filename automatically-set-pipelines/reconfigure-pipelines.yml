@@ -1,0 +1,23 @@
+resources:
+  - name: concourse-examples
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/concourse/examples
+
+jobs:
+- name: configure-self
+  plan:
+  - get: concourse-examples
+    trigger: true
+  - set_pipeline: reconfigure-pipelines
+    file: concourse-examples/pipelines/set-pipelines.yml
+- name: configure-pipelines
+  plan:
+  - get: concourse-examples
+    trigger: true
+    passed: [configure-self]
+  - set_pipeline: hello-world
+    file: concourse-examples/pipelines/hello-world.yml
+  - set_pipeline: time-triggered
+    file: concourse-examples/pipelines/time-triggered.yml
