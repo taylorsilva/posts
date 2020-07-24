@@ -1,22 +1,22 @@
 # Automatically Updating and Archiving Pipelines
 
-In this blog post we're going to cover how to use Concourse to automatically set and update your pipelines using the [`set_pipeline`](https://concourse-ci.org/set-pipeline-step.html) step. No longer will you need to use [`fly set-pipeline`]() to update any of your pipelines!
+In this blog post we're going to cover how to use Concourse to automatically set, update, and archive your pipelines using the [`set_pipeline`](https://concourse-ci.org/set-pipeline-step.html) step. No longer will you need to use [`fly set-pipeline`]() to update any of your pipelines!
 
 For consistency we will refer to the pipeline that contains all the [`set_pipeline`]() steps as the **parent pipeline**. The pipelines created by the `set_pipeline` steps will be called **child pipelines**.
 
-_Scroll to the bottom to see the final pipeline or [click here](https://github.com/concourse/examples/blob/master/pipelines/set-pipelines.yml). What follows is a detailed explanation of how the parent pipeline works._
+_Scroll to the bottom to see the final pipeline or [click here](https://github.com/concourse/examples/blob/master/pipelines/set-pipelines.yml). What follows is a detailed explanation of how the parent pipeline works and automatic archiving._
 
 ### Prerequisite
 
 To run the pipelines in this blog post for yourself you can get your own Concourse running locally by following the [Quick Start guide](https://concourse-ci.org/quick-start.html).
 
-You will also need to fork the `concourse/examples` repo and replace `USERNAME` with your github username in the below examples. We will continue to refer to the repo as `concourse/examples`. Once you have forked the repo clone it locally onto your machine and `cd` into the repo.
+You will also need to fork the [github.com/concourse/examples]() repo and replace `USERNAME` with your github username in the below examples. We will continue to refer to the repo as `concourse/examples`. Once you have forked the repo clone it locally onto your machine and `cd` into the repo.
 
-### Create the `reconfigure-pipeline` Pipeline
+### Create the Parent Pipeline
 
-Inside your fork of `concourse/examples` that you have cloned locally create a file named `reconfigure-pipelines.yml` inside the `pipelines` folder. This is the pipeline that we are going to be building. We will refer to this pipeline as the "parent pipeline".
+Inside your fork of `concourse/examples` that you have cloned locally, create a file named `reconfigure-pipelines.yml` inside the `pipelines` folder. This is the pipeline that we are going to be building. We will refer to this pipeline as the _parent pipeline_.
 
-Like the [`fly set-pipeline`]() command, the `set_pipeline` step needs a YAML file containing the pipeline configuration. We will use the [concourse/examples]() repo as the place to store our pipelines and thankfully it already contains many pipelines! Let's add the repo as a resource to our parent pipeline.
+Like the [`fly set-pipeline`]() command, the `set_pipeline` step needs a YAML file containing a pipeline configuration. We will use the [concourse/examples]() repo as the place to store our pipelines and thankfully it already contains many pipelines! Let's add the repo as a resource to our parent pipeline.
 
 ```yaml
 resources:
@@ -27,7 +27,7 @@ resources:
       uri: https://github.com/USERNAME/examples
 ```
 
-Now we will add a job that will fetch the `concourse/examples` repo, making it available to future steps as the `concourse-examples` artiifact. We will also add the `trigger` parameter to ensure that the job will run whenever a new commit is pushed to the `concourse/examples` repo.
+Now we will add a job that will fetch the `concourse/examples` repo, making it available to future steps as the `concourse-examples` artifact. We will also add the `trigger` parameter to ensure that the job will run whenever a new commit is pushed to the `concourse/examples` repo.
 
 ```yaml
 resources:
@@ -81,17 +81,21 @@ Now let's set our pipeline with `fly` and execute the `configure-pipelines` job.
 $ fly -t local set-pipeline -p reconfigure-pipelines -c pipelines/reconfigure-pipelines.yaml
 ...
 apply configuration? [yN]: y
+
 $ fly -t local unpause-pipeline -p reconfigure-pipelines
 unpaused 'reconfigure-pipelines'
+
 $ fly -t local trigger-job -j reconfigure-pipelines/configure-pipelines --watch
 ```
 
 Once the job is done running you should see two pipelines, `reconfigure-pipelines` and `hello-world`.
 ![UI showing two pipelines](hello-world.png)
 
-### Pipelines Settings Themselves
+Now any changes you make to the `hello-world` pipeline will be updated automatically in Concourse once it picks up the commit with your changes.
 
-Our parent pipeline is setting other pipelines now but it has one glaring limitation: it doesn't set itself. We have to `fly set-pipeline` everytime we want to add new pipeline to the `configure-pipelines` job.
+### Pipelines Setting Themselves
+
+Our parent pipeline is setting and updating other pipelines now but it has one glaring limitation: it doesn't set itself. We have to `fly set-pipeline` every time we want to add new pipeline to the `configure-pipelines` job.
 
 To resolve this we can do the following to our parent pipeline:
 * Add a job **before** the `configure-pipelines` job that self-updates the parent pipeline. We'll name the job `configure-self`.
