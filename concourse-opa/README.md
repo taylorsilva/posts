@@ -53,7 +53,7 @@ concourse:
   environment:
     ...
     CONCOURSE_POLICY_CHECK_FILTER_HTTP_METHODS: GET
-    CONCOURSE_POLICY_CHECK_FILTER_ACTION: ListContainers,ScheduleJob,UseImage
+    CONCOURSE_POLICY_CHECK_FILTER_ACTION: ListContainers,UseImage
 ```
 
 Concourse is now ready to start talking to an OPA server. Let's setup an OPA server next.
@@ -124,10 +124,6 @@ allow {
 }
 
 allow {
-  input.action == "ScheduleJob"
-}
-
-allow {
   input.action == "UseImage"
 }
 ```
@@ -157,9 +153,9 @@ The following table gives more details on each key:
 
 Key | Details
 --- | ---
-`service` | Always present
+`service` | Always present and set to `concourse`
 `cluster_name` | Always present
-`cluster_version` | Always present
+`cluster_version` | Always present and set to the Concourse version
 `cluster_version` | Always present
 `action` | Always present
 `http_method` | Only for HTTP API actions
@@ -168,11 +164,98 @@ Key | Details
 `pipeline` | Only for HTTP API actions where pipeline name is in the URL path
 `data` | An arbitrary map. Not present on HTTP API actions. Currently only present for `UseImage` action.
 
+Now that we know what fields we have access to we can start writing some rules!
+
+### Block ListContainers
+
+When someone runs `fly containers` they see all the containers for their team. We can disable this endpoint completely by writing the following rule:
+
+```
+allow {
+  count(violation) == 0
+}
+
+violation[input.action] {
+  input.action == "ListContainers"
+}
+```
+If you run `fly containers` now you'll get the following:
+```
+$ fly -t dev containers
+error: forbidden
+```
+
+We can add a rule so users on the `main` team can still run the `containers` command:
+
+```
+allow {
+  count(violation) == 0
+}
+
+violation[input.action] {
+  input.action == "ListContainers"
+}
+
+allow {
+  input.action == "ListContainers"
+}
+```
+
+Now if you run `fly containers` you should see a list of containers instead of an error.
+
+Hopefully this example gave you an idea about what kinds of rules you can write. I highly recommend reading the [OPA docs](https://www.openpolicyagent.org/docs/latest/), they're really great!
+
+Let's move onto one last interesting usage of OPA and Concourse.
 
 ### The UseImage Action
 
-The `UseImage` action allows Concourse operators to have some say over what images
+The `UseImage` action allows Concourse operators to have some say over what images users are allowed to use in their pipelines.
 
+The `UseImage` action populates the `data` key with the following properties:
+
+Key | Details
+--- | ---
+privileged | The value of [task-step.privileged](https://concourse-ci.org/jobs.html#schema.step.task-step.privileged)
+image_type | The resource type used to fetch the task image (e.g. `registry-image`)
+image_source | The [Source](https://concourse-ci.org/resource-types.html#schema.resource_type.source) passed into the resource type
+
+For example, if someone was using the [registry-image-resource](https://github.com/concourse/registry-image-resource/) to fetch the [concourse/concourse image](https://hub.docker.com/r/concourse/concourse) the `data` field would be populated with the fields we find in [source of the registry-image](https://github.com/concourse/registry-image-resource/#source-configuration).
+
+Give this resource type in a pipeline:
+
+```yaml
+resources:
+- name: concourse-image
+  type: registry-image
+  source:
+    repository: concourse/concourse
+```
+
+The following JSON will be sent to OPA:
+
+```json
+{
+    "servce": "concourse",
+    "cluster_name": "my-ci",
+    "cluster_version": "6.4.0",
+    "action": "UseImage",
+    "team": "some-team",
+    "pipeline": "some-pipeline",
+    "data": {
+        "privileged": false,
+        "image_type": "registry-image",
+        "image_source": {
+            "repository": "concourse/concourse",
+            "tag": ""
+        }
+    }
+}
+```
+
+With this information we can do a few things, such as:
+* Prevent users from running privileged tasks
+* Block users from using certain images
+* Only allows images from a specific image registry
 
 ---
 Need to point concourse to an OPA server.
