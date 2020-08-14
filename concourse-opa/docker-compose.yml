@@ -26,7 +26,7 @@ services:
       CONCOURSE_WORKER_BAGGAGECLAIM_DRIVER: overlay
       CONCOURSE_OPA_URL: http://opa:8181/v1/data/concourse/allow
       CONCOURSE_POLICY_CHECK_FILTER_HTTP_METHODS: GET
-      CONCOURSE_POLICY_CHECK_FILTER_ACTION: ListWorkers,ListContainers,UseImage
+      CONCOURSE_POLICY_CHECK_FILTER_ACTION: ListContainers,ScheduleJob,UseImage
       # CONCOURSE_POLICY_CHECK_FILTER_ACTION_SKIP: PausePipeline,UnpausePipeline
 
 

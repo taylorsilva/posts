@@ -53,7 +53,7 @@ concourse:
   environment:
     ...
     CONCOURSE_POLICY_CHECK_FILTER_HTTP_METHODS: GET
-    CONCOURSE_POLICY_CHECK_FILTER_ACTION: ListAllJobs,ListContainers,UseImage
+    CONCOURSE_POLICY_CHECK_FILTER_ACTION: ListContainers,ScheduleJob,UseImage
 ```
 
 Concourse is now ready to start talking to an OPA server. Let's setup an OPA server next.
@@ -99,7 +99,7 @@ Visit [http://localhost:8080/](http://localhost:8080/) to verify that Concourse 
 Let's set the [time-triggered](https://github.com/concourse/examples/blob/master/pipelines/time-triggered.yml) pipeline to seed some data and activity in our Concourse.
 
 ```bash
-$ fly -t dev login -c http://localhost:8080 -u test -p test -n main
+$ fly -t dev login -c "http://localhost:8080" -u test -p test -n main
 
 $ fly -t dev sp -p time-triggered -c time-triggered.yml
 
@@ -110,7 +110,69 @@ Now we can start experimenting with OPA rules!
 
 ### OPA Rules
 
-The OPA server has been configured to watch for for updates to our `policy.rego` file, so we can make changes and immediately see the effect it has on a Concourse user.
+The OPA server has been configured to watch for for updates to our `policy.rego` file, so we can make changes and immediately see the effect it has on a Concourse user. Currently our policy allows every check from Concourse to pass. Let's change that and add some rules.
+
+Lets add some rules that still allow every check to pass.
+
+```
+package concourse
+
+default allow = false
+
+allow {
+  input.action == "ListContainers"
+}
+
+allow {
+  input.action == "ScheduleJob"
+}
+
+allow {
+  input.action == "UseImage"
+}
+```
+
+If you trigger the pipeline or wait for it to be triggered you should see the job continue to pass:
+
+![image of passing job](dashboard-job-green.png)
+
+#### OPA Fields
+
+In order to start writing rules we need to know what data Concourse is passing to OPA when performing a check. Here's the JSON that Concourses ends to OPA:
+
+```json
+{
+    "servce": "",
+    "cluster_name": "",
+    "cluster_version": "",
+    "http_method": "",
+    "action": "",
+    "user": "",
+    "team": "",
+    "pipeline": "",
+    "data": {}
+}
+```
+The following table gives more details on each key:
+
+Key | Details
+--- | ---
+`service` | Always present
+`cluster_name` | Always present
+`cluster_version` | Always present
+`cluster_version` | Always present
+`action` | Always present
+`http_method` | Only for HTTP API actions
+`user` | Only for HTTP API actions
+`team` | Only for HTTP API actions where the team name is in the URL path
+`pipeline` | Only for HTTP API actions where pipeline name is in the URL path
+`data` | An arbitrary map. Not present on HTTP API actions. Currently only present for `UseImage` action.
+
+
+### The UseImage Action
+
+The `UseImage` action allows Concourse operators to have some say over what images
+
 
 ---
 Need to point concourse to an OPA server.
