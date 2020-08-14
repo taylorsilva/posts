@@ -3,6 +3,7 @@ package concourse
 default allow = false
 
 allow {
+# the team was not set. Guessing it's not set for non-team endpoints which makes sense...
   input.user == "test"
   input.action == "ListWorkers"
 }
@@ -14,8 +15,3 @@ allow {
 allow {
   input.action == "ListContainers"
 }
-
-# main_team_only {
-#     input.team == "main"
-#     input.action == "ListContainers"
-# }

@@ -4,7 +4,7 @@ Do you like applying policies to your services? Is Concourse one of those servic
 
 In this blog post we are going to go over how to configure Concourse to do policy checks against an OPA server. If you want to learn more about OPA I suggest [reading the docs](https://www.openpolicyagent.org/docs/latest/) as a starting point. We will go over a few use-cases in this blog post so you can get started with some Concourse specific policies with your OPA server.
 
-We will be doing everything locally by using a Docker Compose file to run Concourse and an OPA server.
+We will be doing everything locally by using a Docker Compose file to run Concourse and an OPA server. The [docker-compose.yml can be found in this gist](https://gist.github.com/taylorsilva/2bdbeb8c0d985f1c61ff539a9dd16a24).
 
 ### Configuring Concourse
 
@@ -37,13 +37,15 @@ concourse:
     CONCOURSE_OPA_URL: http://opa:8181/v1/data/concourse/allow
 ```
 
+The OPA URL has the format of `http://host/v1/data/<package path>/<rule name>`. You can read more about how OPA package and rule naming works in the [OPA docs](https://www.openpolicyagent.org/docs/latest/integration/#named-policy-decisions).
+
 This will point Concourse to the `opa` service that we will define later in our docker-compose.yml file.
 
 Next we need to specify which actions we want Concourse to policy check. To find out what actions we can ask Concourse to check we can look at the list of API actions at the top of [routes.go](https://github.com/concourse/concourse/blob/master/atc/routes.go). There is also one extra action called [`UseImage`](https://github.com/concourse/concourse/blob/master/atc/policy/checker.go) that we will look at later.
 
-Since most actions refer to API endpoints you need to specify the HTTP method(s) and API endpoint in order to have Concourse perform a check against that endpoint. The same rule does not apply for non-HTTP actions, which is currently just the `UseImage` action.
+Since most actions refer to API endpoints you need to specify the HTTP method(s) and API endpoint in order to have Concourse perform a check against that endpoint. The same rule does not apply for non-HTTP actions, which is currently only the `UseImage` action.
 
-To start we will check the `ListWorkers` and `ListContainers` endpoints, both are `GET` endpoints (_this info is also in [routes.go](https://github.com/concourse/concourse/blob/master/atc/routes.go) at the bottom_). We will also add the `UseImage` action.
+To start we will check the `ListAllJobs` and `ListContainers` endpoints, both are `GET` endpoints (_this info is also in [routes.go](https://github.com/concourse/concourse/blob/master/atc/routes.go) at the bottom half of the file_). We will also add the `UseImage` action for experimenting with later.
 ```yaml
 concourse:
   image: concourse/concourse
@@ -51,11 +53,64 @@ concourse:
   environment:
     ...
     CONCOURSE_POLICY_CHECK_FILTER_HTTP_METHODS: GET
-    CONCOURSE_POLICY_CHECK_FILTER_ACTION: ListWorkers,ListContainers,UseImage
+    CONCOURSE_POLICY_CHECK_FILTER_ACTION: ListAllJobs,ListContainers,UseImage
 ```
 
+Concourse is now ready to start talking to an OPA server. Let's setup an OPA server next.
 
+### Setup the OPA Server
 
+In our docker-compose.yml file there is an `opa` service that Concourse will be able to reach. It has been configured to watch for any `*.rego` files that are in the same directory.
+
+```yaml
+  opa:
+    image: openpolicyagent/opa
+    command:
+    - run
+    - --server
+    - --log-level=debug
+    - --watch
+    - /concourse-opa
+    volumes:
+    # we assume your .rego file(s) are in the current working dir as this
+    # docker-compose file
+    - ./:/concourse-opa
+```
+
+In the same directory as the `docker-compose.yml` file, create a `policy.rego` file and put the following into it:
+
+```
+package concourse
+
+# replace with 'false' to add rules
+default allow = true
+```
+
+The package name is `concourse` and the only rule in it is the `allow` rule, which matches what we set the `CONCOURSE_OPA_URL` to. Currently it will allow all checks to pass. We will change this later.
+
+At this point we can bring up Concourse and the OPA server:
+
+```bash
+$ docker-compose up -d
+```
+
+Visit [http://localhost:8080/](http://localhost:8080/) to verify that Concourse is up.
+
+Let's set the [time-triggered](https://github.com/concourse/examples/blob/master/pipelines/time-triggered.yml) pipeline to seed some data and activity in our Concourse.
+
+```bash
+$ fly -t dev login -c http://localhost:8080 -u test -p test -n main
+
+$ fly -t dev sp -p time-triggered -c time-triggered.yml
+
+$ fly -t dev up -p time-triggered
+```
+
+Now we can start experimenting with OPA rules!
+
+### OPA Rules
+
+The OPA server has been configured to watch for for updates to our `policy.rego` file, so we can make changes and immediately see the effect it has on a Concourse user.
 
 ---
 Need to point concourse to an OPA server.
