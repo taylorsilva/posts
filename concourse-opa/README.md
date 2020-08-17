@@ -1,12 +1,12 @@
 # Connecting Concourse to OPA
 
-Do you like applying policies to your services? Is Concourse one of those services? Then this is the guide for you!
-
 In this blog post we are going to go over how to configure Concourse to do policy checks against an OPA server. If you want to learn more about OPA I suggest [reading the docs](https://www.openpolicyagent.org/docs/latest/) as a starting point. We will go over a few use-cases in this blog post so you can get started with some Concourse specific policies with your OPA server.
+
+The audience for this blog post is people who run and manage one or more Concourse clusters. Policies are an easy way to ensure the tenants of your Concourse cluster are being good citizens. We'll dig into this as we start writing OPA rules.
 
 We will be doing everything locally by using a Docker Compose file to run Concourse and an OPA server. The [docker-compose.yml can be found in this gist](https://gist.github.com/taylorsilva/2bdbeb8c0d985f1c61ff539a9dd16a24).
 
-### Configuring Concourse
+## Configuring Concourse
 
 We need to configure Concourse with a two things:
 * The OPA endpoint
@@ -34,7 +34,7 @@ concourse:
   ...
   environment:
     ...
-    CONCOURSE_OPA_URL: http://opa:8181/v1/data/concourse/allow
+    CONCOURSE_OPA_URL: http://opa:8181/v1/data/concourse/check
 ```
 
 The OPA URL has the format of `http://host/v1/data/<package path>/<rule name>`. You can read more about how OPA package and rule naming works in the [OPA docs](https://www.openpolicyagent.org/docs/latest/integration/#named-policy-decisions).
@@ -58,7 +58,7 @@ concourse:
 
 Concourse is now ready to start talking to an OPA server. Let's setup an OPA server next.
 
-### Setup the OPA Server
+## Setup the OPA Server
 
 In our docker-compose.yml file there is an `opa` service that Concourse will be able to reach. It has been configured to watch for any `*.rego` files that are in the same directory.
 
@@ -83,10 +83,10 @@ In the same directory as the `docker-compose.yml` file, create a `policy.rego` f
 package concourse
 
 # replace with 'false' to add rules
-default allow = true
+default check = true
 ```
 
-The package name is `concourse` and the only rule in it is the `allow` rule, which matches what we set the `CONCOURSE_OPA_URL` to. Currently it will allow all checks to pass. We will change this later.
+The package name is `concourse` and the only rule in it is the `check` rule, which matches what we set the `CONCOURSE_OPA_URL` to. Currently it will allow all checks to pass. We will change this later.
 
 At this point we can bring up Concourse and the OPA server:
 
@@ -108,22 +108,26 @@ $ fly -t dev up -p time-triggered
 
 Now we can start experimenting with OPA rules!
 
-### OPA Rules
+## OPA Rules
 
 The OPA server has been configured to watch for for updates to our `policy.rego` file, so we can make changes and immediately see the effect it has on a Concourse user. Currently our policy allows every check from Concourse to pass. Let's change that and add some rules.
 
-Lets add some rules that still allow every check to pass.
+Lets add some rules that still allow every check to pass. This package logic says:
+
+```
+policy check passes if the action is ListContainers OR the action is UseImage
+```
 
 ```
 package concourse
 
-default allow = false
+default check = false
 
-allow {
+check {
   input.action == "ListContainers"
 }
 
-allow {
+check {
   input.action == "UseImage"
 }
 ```
@@ -132,7 +136,7 @@ If you trigger the pipeline or wait for it to be triggered you should see the jo
 
 ![image of passing job](dashboard-job-green.png)
 
-#### OPA Fields
+## OPA Fields
 
 In order to start writing rules we need to know what data Concourse is passing to OPA when performing a check. Here's the JSON that Concourses ends to OPA:
 
@@ -166,12 +170,20 @@ Key | Details
 
 Now that we know what fields we have access to we can start writing some rules!
 
-### Block ListContainers
+## Block ListContainers
 
-When someone runs `fly containers` they see all the containers for their team. We can disable this endpoint completely by writing the following rule:
+When someone runs `fly containers` they see all the containers for their team. We can disable this endpoint completely by writing the following rule, which has the following logic:
 
 ```
-allow {
+policy check passes if violations are zero
+```
+
+```
+package concourse
+
+default check = false
+
+check {
   count(violation) == 0
 }
 
@@ -185,29 +197,43 @@ $ fly -t dev containers
 error: forbidden
 ```
 
-We can add a rule so users on the `main` team can still run the `containers` command:
+Now what if we still want some subset of uesrs or a team to still be able to call this endpoint? 
+We can add a rule, `allowed`, so users on the `main` team can still run the `containers` command. The logic of the following package is now:
 
 ```
-allow {
+policy check passes if violations are zero OR allowed is >= to one
+```
+
+```
+package concourse
+
+default check = false
+
+check {
   count(violation) == 0
+}
+
+check {
+  count(allowed) >= 1
 }
 
 violation[input.action] {
   input.action == "ListContainers"
 }
 
-allow {
+allowed[input.action] {
+  input.team == "main"
   input.action == "ListContainers"
 }
 ```
 
-Now if you run `fly containers` you should see a list of containers instead of an error.
+Now if you run `fly containers` you should see a list of containers instead of an error. If someone that is not on the `main` team tries to list containers they'll get `error forbidden`.
 
-Hopefully this example gave you an idea about what kinds of rules you can write. I highly recommend reading the [OPA docs](https://www.openpolicyagent.org/docs/latest/), they're really great!
+Hopefully this example gave you an idea about what kinds of rules you can write for the API endpoints. I highly recommend reading the [OPA docs](https://www.openpolicyagent.org/docs/latest/) to help you think of other rules you can write.
 
-Let's move onto one last interesting usage of OPA and Concourse.
+Let's move onto one last very interesting usage of OPA and Concourse.
 
-### The UseImage Action
+## The UseImage Action
 
 The `UseImage` action allows Concourse operators to have some say over what images users are allowed to use in their pipelines.
 
@@ -229,6 +255,7 @@ resources:
   type: registry-image
   source:
     repository: concourse/concourse
+    tag: latest
 ```
 
 The following JSON will be sent to OPA:
@@ -246,7 +273,7 @@ The following JSON will be sent to OPA:
         "image_type": "registry-image",
         "image_source": {
             "repository": "concourse/concourse",
-            "tag": ""
+            "tag": "latest"
         }
     }
 }
@@ -256,6 +283,27 @@ With this information we can do a few things, such as:
 * Prevent users from running privileged tasks
 * Block users from using certain images
 * Only allows images from a specific image registry
+
+Let's write some policies that implement the above behaviour.
+
+### Block Privileged Tasks
+
+If we want to prevent everyone on our Concourse cluster from running privileged tasks we can add the following rule to `policy.rego`.
+
+```
+allow {
+  count(violation) == 0
+}
+
+violation[input.action] {
+  input.action == "UseImage"
+  input.data.privileged == "true"
+}
+```
+
+Now if we change our pipeline to run a `privileged` task we'll get the following error:
+
+
 
 ---
 Need to point concourse to an OPA server.
