@@ -102,6 +102,22 @@ Once the job is done running you should see two pipelines, `reconfigure-pipeline
 
 Now any changes you make to the `hello-world` pipeline will be updated automatically in Concourse once it picks up the commit with your changes.
 
+## Detour: The Future of Setting Parent Pipelines
+
+Currently under discussion is [RFC 32: Projects](https://github.com/concourse/rfcs/pull/32/). One if it's core motivations is:
+
+> Smoothen the learning curve. Right now the jump from fly execute to fly set-pipeline is pretty steep...
+
+Currently, as of Concourse 6.5.0, the only way to create a pipeline is:
+* `fly set-pipeline` or
+*  `set_pipeline` step in a pipeline that you have to first `fly set-pipeline` with...
+
+If [RFC 32](https://github.com/concourse/rfcs/pull/32/) is implemented as currently described then you won't have to ever use `fly set-pipeline` to create pipelines, you'll simply create a **Project**, which involves pointing Concourse to a repo where you code lives. In the proposed `project.yml` you can then define all of your pipelines with `set_pipeline` steps. You'll end up with an even cleaner GitOps flow than what's currently possible.
+
+The [RFC is still open](https://github.com/concourse/rfcs/pull/32) and looking for feedback. Check out the PR and leave your thoughts for the community to discuss!
+
+Now let's get back on track and talk about how to automatically set that parent pipeline.
+
 ## Pipelines Setting Themselves
 
 Our parent pipeline is setting and updating one other pipeline now but it has one glaring limitation: it doesn't set itself. We have to `fly set-pipeline` every time we want to add a new pipeline to the `configure-pipelines` job.
