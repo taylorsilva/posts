@@ -166,7 +166,7 @@ Key | Details
 `user` | Only for HTTP API actions
 `team` | Only for HTTP API actions where the team name is in the URL path
 `pipeline` | Only for HTTP API actions where pipeline name is in the URL path
-`data` | An arbitrary map. Not present on HTTP API actions. Currently only present for `UseImage` action.
+`data` | A map. For API actions the request body is passed in here.
 
 Now that we know what fields we have access to we can start writing some rules!
 
