@@ -1,10 +1,10 @@
 # Connecting Concourse to OPA
 
-In this blog post we are going to go over how to configure Concourse to do policy checks against an OPA server. If you want to learn more about OPA I suggest [reading the docs](https://www.openpolicyagent.org/docs/latest/) as a starting point. We will go over a few use-cases in this blog post so you can get started with some Concourse specific policies with your OPA server.
+In this blog post we are going to go over how to configure Concourse to do policy checks against an OPA server. If you want to learn more about the OPA project I suggest [reading the docs](https://www.openpolicyagent.org/docs/latest/) as a starting point. We will go over a few use-cases in this blog post so you can get started with some Concourse specific policies with your OPA server.
 
 The audience for this blog post is people who run and manage one or more Concourse clusters. Policies are an easy way to ensure the tenants of your Concourse cluster are being good citizens. We'll dig into this as we start writing OPA rules.
 
-We will be doing everything locally by using a Docker Compose file to run Concourse and an OPA server. The [docker-compose.yml can be found in this gist](https://gist.github.com/taylorsilva/2bdbeb8c0d985f1c61ff539a9dd16a24).
+We will be doing everything locally by using a Docker Compose file to run Concourse and an OPA server. The [docker-compose.yml can be found in this gist](https://gist.github.com/taylorsilva/2bdbeb8c0d985f1c61ff539a9dd16a24). Simply download that file to a directory and run `docker-compose up -d` to start Concourse and an OPA service.
 
 ## Configuring Concourse
 
@@ -25,6 +25,9 @@ Policy Check Agent (Open Policy Agent):
 ```
 
 The Policy Checker in Concourse has been designed to support any other policy checking servers. Currently only OPA is implemented. Anyone can feel free to add other policy checking agents.
+
+For the BOSH release of Concourse look here.
+For the Concourse Helm chart look here.
 
 Let's start by configuring the Open Policy Agent. We can do this by setting the `CONCOURSE_OPA_URL` variable. It will look like this in our docker-compose.yml file:
 
