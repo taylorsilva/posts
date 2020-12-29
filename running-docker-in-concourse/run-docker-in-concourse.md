@@ -12,7 +12,7 @@ Thankfully this challenge has been solved by the community! There are a few "Doc
 
 You can also opt to build your own or fork the above images.
 
-All of the above repositories have their own example pipelines that you can use to get started. What follows are some bits of information that is useful to know when using these task images.
+All of the above repositories have their own example pipelines that you can use to get started. What follows are some bits of information that are useful to know when using these task images.
 
 ## Privileged Tasks
 
