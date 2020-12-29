@@ -14,13 +14,13 @@ You can also opt to build your own or fork the above images.
 
 All of the above repositories have their own example pipelines that you can use to get started. What follows are some bits of information that is useful to know when using these task images.
 
-### Privileged Tasks
+## Privileged Tasks
 
 Running Docker inside Concourse requires the [task step](https://concourse-ci.org/jobs.html#schema.step.task-step.task) to be [privileged](https://concourse-ci.org/jobs.html#schema.step.task-step.privileged) because Docker needs access to the hosts cgroup filesystem in order to create containers. 
 
 You can verify this by looking at the bash scripts for each of the above images which all take inspiration from the [docker-image resource](https://github.com/concourse/docker-image-resource). Read the [`sanitize_cgroups` function](https://github.com/concourse/docker-image-resource/blob/babf5a7dc293102e34bd2bf93815ee3d35aac54e/assets/common.sh#L5-L48) to see what exactly is being mounted from the host. (tldr: mount all cgroups as read-write)
 
-### Externalize All Images
+## Externalize All Images
 
 You should avoid having Docker fetch any images from inside your task step where you are running `docker-compose`. You should externalize these as [image resources](https://github.com/concourse/registry-image-resource) if they're a dependency of your application (e.g. Postgres, MySQL).
 
