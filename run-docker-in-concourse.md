@@ -1,1 +1,0 @@
-# Running Docker in Concourse
